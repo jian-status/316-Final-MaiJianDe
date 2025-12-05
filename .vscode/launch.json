@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Reset Postgre Data",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server/test/data/postgre/index.js",
+      "args": [
+        "--runInBand"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Vitest",
+      "program": "${workspaceFolder}/server/node_modules/vitest/vitest.mjs",
+      "args": ["run"],
+      "autoAttachChildProcesses": true,
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}/server/",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Reset Mongo Data",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server/test/data/mongo/index.js",
+      "args": [
+        "--runInBand"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}
