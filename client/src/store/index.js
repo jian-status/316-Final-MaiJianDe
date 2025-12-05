@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {jsTPS} from "jstps"
 import storeRequestSender from './requests'
 import CreateSong_Transaction from '../transactions/CreateSong_Transaction'
@@ -60,7 +60,7 @@ function GlobalStoreContextProvider(props) {
         listIdMarkedForDeletion: null,
         listMarkedForDeletion: null
     });
-    const history = useHistory();
+    const navigate = useNavigate();
 
     console.log("inside useGlobalStore");
 
@@ -245,7 +245,7 @@ function GlobalStoreContextProvider(props) {
             }
         }
         asyncSetCurrentList(id);
-        history.push("/playlist/635f203d2e072037af2e6284");
+        navigate("/playlist/635f203d2e072037af2e6284");
     }
 
     // THESE ARE THE FUNCTIONS THAT WILL UPDATE OUR STORE AND
@@ -302,7 +302,7 @@ function GlobalStoreContextProvider(props) {
             payload: {}
         });
         tps.clearAllTransactions();
-        history.push("/");
+        navigate("/");
     }
 
     // THIS FUNCTION CLEARS ALL STORE DATA (for user logout/login)
@@ -334,7 +334,7 @@ function GlobalStoreContextProvider(props) {
             );
 
             // IF IT'S A VALID LIST THEN LET'S START EDITING IT
-            history.push("/playlist/" + newList._id);
+            navigate("/playlist/" + newList._id);
         }
         else {
             console.log("FAILED TO CREATE A NEW LIST");
@@ -391,7 +391,7 @@ function GlobalStoreContextProvider(props) {
             let response = await storeRequestSender.deletePlaylistById(id);
             if (response.status === 200) {
                 store.loadIdNamePairs();
-                history.push("/");
+                navigate("/");
             }
         }
         processDelete(id);
@@ -448,7 +448,7 @@ function GlobalStoreContextProvider(props) {
                                     type: GlobalStoreActionType.SET_CURRENT_LIST,
                                     payload: playlist
                                 });
-                                history.push("/playlist/" + playlist._id);
+                                navigate("/playlist/" + playlist._id);
                             } else {
                                 console.error("Failed to update playlist:", data);
                             }

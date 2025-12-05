@@ -1,6 +1,6 @@
 import './App.css';
-import { React } from 'react'
-import { BrowserRouter, Route, Switch } from 'react-router-dom'
+import React from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthContextProvider } from './auth';
 import { GlobalStoreContextProvider } from './store'
 import {
@@ -9,7 +9,8 @@ import {
     LoginScreen,
     RegisterScreen,
     Statusbar,
-    WorkspaceScreen
+    WorkspaceScreen,
+    SongCatalogScreen,
 } from './components'
 /*
   This is the entry-point for our application. Notice that we
@@ -23,12 +24,13 @@ const App = () => {
             <AuthContextProvider>
                 <GlobalStoreContextProvider>              
                     <AppBanner />
-                    <Switch>
-                        <Route path="/" exact component={HomeWrapper} />
-                        <Route path="/login/" exact component={LoginScreen} />
-                        <Route path="/register/" exact component={RegisterScreen} />
-                        <Route path="/playlist/:id" exact component={WorkspaceScreen} />
-                    </Switch>
+                    <Routes>
+                        <Route path="/" element={<HomeWrapper />} />
+                        <Route path="/login/" element={<LoginScreen />} />
+                        <Route path="/register/" element={<RegisterScreen />} />
+                        <Route path="/playlist/:id" element={<WorkspaceScreen />} />
+                        <Route path="/SongCatalogScreen" element={<SongCatalogScreen />} />
+                    </Routes>
                     <Statusbar />
                 </GlobalStoreContextProvider>
             </AuthContextProvider>

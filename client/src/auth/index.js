@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from "react";
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import authRequestSender from './requests'
 
 const AuthContext = createContext();
@@ -19,7 +19,7 @@ function AuthContextProvider(props) {
         loggedIn: false,
         errorMessage: null
     });
-    const history = useHistory();
+    const navigate = useNavigate();
 
     useEffect(() => {
         auth.getLoggedIn();
@@ -91,7 +91,7 @@ function AuthContextProvider(props) {
                         errorMessage: null
                     }
                 })
-                history.push("/login");
+                navigate("/login");
                 console.log("NOW WE LOGIN");
                 auth.loginUser(email, password);
                 console.log("LOGGED IN");
@@ -122,7 +122,7 @@ function AuthContextProvider(props) {
                         errorMessage: null
                     }
                 })
-                history.push("/");
+                navigate("/");
             }
         } catch(error){
             authReducer({
@@ -143,7 +143,7 @@ function AuthContextProvider(props) {
                 type: AuthActionType.LOGOUT_USER,
                 payload: null
             })
-            history.push("/");
+            navigate("/");
         }
     }
 

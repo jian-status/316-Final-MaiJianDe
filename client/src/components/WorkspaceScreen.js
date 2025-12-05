@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import SongCard from './SongCard.js'
 import MUIEditSongModal from './MUIEditSongModal'
 //import MUIRemoveSongModal from './MUIRemoveSongModal'
@@ -14,7 +14,7 @@ import { GlobalStoreContext } from '../store/index.js'
 */
 function WorkspaceScreen() {
     const { store } = useContext(GlobalStoreContext);
-    store.history = useHistory();
+    store.history = useNavigate();
     
     let modalJSX = "";
     if (store.isEditSongModalOpen()) {

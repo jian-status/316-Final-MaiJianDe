@@ -40,12 +40,22 @@ export const updatePlaylistById = (id, playlist) => {
     })
 }
 
+export const getFilteredSongs = (title, artist, year) => {
+    return fetch(`http://localhost:4000/store/songs/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title, artist, year })
+    });
+}
+
 const apis = {
     createPlaylist,
     deletePlaylistById,
     getPlaylistById,
     getPlaylistPairs,
-    updatePlaylistById
+    updatePlaylistById,
+    getFilteredSongs
 }
 
 export default apis
