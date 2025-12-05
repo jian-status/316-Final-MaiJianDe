@@ -22,20 +22,14 @@ let db = null;
 
 async function startServer() {
     try {
-        // Initialize database first
-        if (!process.env.DB || process.env.DB === 'mongo') {
-            const MongoDBManager = require('./db/mongo');
-            db = new MongoDBManager();
-        } else {
-            const PostgresManager = require('./db/postgre');
-            db = new PostgresManager();
-        }
         
-        await db.connection; // Wait for async constructors to finish connecting
+        const PostgresManager = require('./db/postgre');
+        db = new PostgresManager();
+        await db.connection;
+        await db.resetDB(); 
         
         module.exports.db = db;
         
-        // SETUP OUR OWN ROUTERS AS MIDDLEWARE
         const authRouter = require('./routes/auth-router')
         app.use('/auth', authRouter)
         const storeRouter = require('./routes/store-router')

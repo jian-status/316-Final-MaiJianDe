@@ -294,11 +294,54 @@ updatePlaylist = async (req, res) => {
         });
     }
 }
+getSongsByPlaylist = async (req, res) => {
+    try {
+        const playlistId = req.params.playlistId;
+        const playlist = await db.getPlaylist(playlistId);
+        if (!playlist) {
+            return res.status(404).json({
+                success: false,
+                error: 'Playlist not found'
+            });
+        }
+        return res.status(200).json({ success: true, playlist: playlist });
+    } catch (error) {
+        console.error("getSongsByPlaylistId error:", error);
+        return res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+getSongCatalog = async (req, res) => {
+    try {
+        const songs = await db.filterSongCatalog(req.query);
+        return res.status(200).json({ success: true, songs });
+    } catch (error) {
+        console.error('filterSongCatalog error:', error);
+        return res.status(400).json({ success: false, error: error.message });
+    }
+}
+
+getAllSongs = async (req, res) => {
+    try {
+        const songs = await db.getAllSongs();
+        return res.status(200).json({ success: true, songs });
+    } catch (error) {
+        console.error('getAllSongs error:', error);
+        return res.status(400).json({ success: false, error: error.message });
+    }
+}
+
 module.exports = {
     createPlaylist,
     deletePlaylist,
     getPlaylistById,
     getPlaylistPairs,
     getPlaylists,
-    updatePlaylist
+    updatePlaylist,
+    getSongsByPlaylist,
+    getSongCatalog,
+    getAllSongs
 }

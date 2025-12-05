@@ -64,6 +64,12 @@ Song.init({
   youTubeId: { 
     type: DataTypes.STRING 
   },
+  playlistCount: {
+    type: DataTypes.INTEGER,
+    field: 'PlaylistCount',
+    allowNull: false,
+    defaultValue: 1
+  },
   playlistId: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -158,6 +164,7 @@ class PostgresManager extends DatabaseManager {
       for (const data of testData.playlists) {
         const res = playlists.find((p) => p.name === data.name);
         if (res && data.songs) {
+          
           const songs = data.songs.map((song) => ({
             ...song,
             playlistId: res._id,
@@ -360,6 +367,47 @@ class PostgresManager extends DatabaseManager {
       
     } catch (err) {
       console.error("Could not update playlist:", err.message);
+      throw err;
+    }
+  }
+
+  async getSongsByPlaylist(playlistId) {
+    try {
+      return await Song.findAll({
+        where: { playlistId: playlistId }
+      });
+    } catch (err) {
+      console.error("Could not get songs by playlist:", err.message);
+      throw err;
+    }
+  }
+
+  async getAllSongs() {
+    try {
+      return await Song.findAll({
+        include: [{
+          model: Playlist,
+          attributes: ['name', 'ownerEmail']
+        }]
+      });
+    } catch (err) {
+      console.error("Could not get all songs:", err.message);
+      throw err;
+    }
+  }
+
+  async filterSongCatalog(filters) {
+    try {
+      const { title, artist, year } = filters
+      const songs = await this.getAllSongs();
+      return songs.filter((song) => 
+          (title ? song.title.toLowerCase().includes(title.toLowerCase().trim()) : true) &&
+          (artist ? song.artist.toLowerCase().includes(artist.toLowerCase().trim()) : true) &&
+          (year ? parseInt(song.year) === parseInt(year) : true)
+      );
+
+    } catch (err) {
+      console.error('Could not filter Song Catalog:', err.message);
       throw err;
     }
   }
