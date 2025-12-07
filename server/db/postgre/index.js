@@ -401,8 +401,8 @@ class PostgresManager extends DatabaseManager {
       const { title, artist, year } = filters
       const songs = await this.getAllSongs();
       return songs.filter((song) => 
-          (title ? song.title.toLowerCase().includes(title.toLowerCase().trim()) : true) &&
-          (artist ? song.artist.toLowerCase().includes(artist.toLowerCase().trim()) : true) &&
+          (title ? song.title.toLowerCase().startsWith(title.toLowerCase().trim()) : true) &&
+          (artist ? song.artist.toLowerCase().startsWith(artist.toLowerCase().trim()) : true) &&
           (year ? parseInt(song.year) === parseInt(year) : true)
       );
 

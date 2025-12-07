@@ -34,7 +34,6 @@ async function startServer() {
         app.use('/auth', authRouter)
         const storeRouter = require('./routes/store-router')
         app.use('/store', storeRouter)
-
         app.listen(PORT, () => console.log(`Playlister Server running on port ${PORT}`));
         
     } catch (error) {
