@@ -26,12 +26,12 @@ const App = () => {
                 <GlobalStoreContextProvider>              
                     <AppBanner />
                     <Routes>
-                        <Route path="/" element={<HomeWrapper />} />
+                        <Route path="/" element={<PlaylistCatalogScreen />} />
                         <Route path="/login/" element={<LoginScreen />} />
                         <Route path="/register/" element={<RegisterScreen />} />
                         <Route path="/playlist/:id" element={<WorkspaceScreen />} />
                         <Route path="/SongCatalogScreen" element={<SongCatalogScreen />} />
-                        <Route path="/PlaylistCatalogScreen" element={<PlaylistCatalogScreen />} />
+                        <Route path="/playlists" element={<HomeWrapper />} />
                     </Routes>
                     <Statusbar />
                 </GlobalStoreContextProvider>

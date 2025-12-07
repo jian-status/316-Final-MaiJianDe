@@ -27,7 +27,7 @@ function EditToolbar() {
     function handleCancel() {
         store.deleteList(store.currentList.id);
     }
-    function handleComplete() {
+    function handleSave() {
         store.closeCurrentList();
     }
     return (
@@ -39,34 +39,35 @@ function EditToolbar() {
                 variant="contained">
                 <AddIcon />
             </Button>
-            <Button 
+            <Button
                 disabled={!store.canUndo()}
                 id='undo-button'
                 onClick={handleUndo}
                 variant="contained">
-                    <UndoIcon />
+                <UndoIcon />
             </Button>
-            <Button 
+            <Button
                 disabled={!store.canRedo()}
                 id='redo-button'
                 onClick={handleRedo}
                 variant="contained">
-                    <RedoIcon />
+                <RedoIcon />
             </Button>
-            <Button 
+            <Button
                 disabled={!store.canClose()}
                 id='complete-button'
-                onClick={handleComplete}
+                onClick={handleSave}
                 variant="contained">
-                    Complete
+                {store.isNewPlaylist ? 'Complete' : 'Close'}
             </Button>
-            <Button 
+            {!store.isNewPlaylist ? '' : <Button
                 disabled={!store.canClose()}
                 id='cancel-button'
                 onClick={handleCancel}
                 variant="contained">
-                    Cancel
+                Cancel
             </Button>
+            }
         </div>
     )
 }

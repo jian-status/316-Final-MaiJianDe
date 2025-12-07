@@ -7,6 +7,7 @@ import MoveSong_Transaction from '../transactions/MoveSong_Transaction'
 import RemoveSong_Transaction from '../transactions/RemoveSong_Transaction'
 import UpdateSong_Transaction from '../transactions/UpdateSong_Transaction'
 import AuthContext from '../auth'
+import ChangePlaylistName_Transaction from '../transactions/ChangePlaylistName_Transaction'
 
 /*
     This is our global data store. Note that it uses the Flux design pattern,
@@ -37,6 +38,7 @@ export const GlobalStoreActionType = {
 
 // WE'LL NEED THIS TO PROCESS TRANSACTIONS
 const tps = new jsTPS();
+// Expose tps on store for transaction access
 
 const CurrentModal = {
     NONE : "NONE",
@@ -58,6 +60,7 @@ function GlobalStoreContextProvider(props) {
         newListCounter: 0,
         listNameActive: false,
         listIdMarkedForDeletion: null,
+        isNewPlaylist: false,
         listMarkedForDeletion: null
     });
     const navigate = useNavigate();
@@ -248,6 +251,14 @@ function GlobalStoreContextProvider(props) {
         navigate("/playlist/635f203d2e072037af2e6284");
     }
 
+    store.setListName = function (id, newName) {
+        if (this.currentList.name !== newName) {
+            // Use transaction for undo/redo
+            const oldName = this.currentList.name;
+            let transaction = new ChangePlaylistName_Transaction(store, id, oldName, newName);
+            tps.processTransaction(transaction);
+        }
+    }
     // THESE ARE THE FUNCTIONS THAT WILL UPDATE OUR STORE AND
     // DRIVE THE STATE OF THE APPLICATION. WE'LL CALL THESE IN 
     // RESPONSE TO EVENTS INSIDE OUR COMPONENTS.
@@ -302,6 +313,7 @@ function GlobalStoreContextProvider(props) {
             payload: {}
         });
         tps.clearAllTransactions();
+        setStore(prev => ({ ...prev, isNewPlaylist: false }));
         navigate("/");
     }
 
@@ -323,15 +335,14 @@ function GlobalStoreContextProvider(props) {
             const data = await response.json();
             tps.clearAllTransactions();
             let newList = data.playlist;
-            
             if (!newList.songs) {
                 newList.songs = [];
             }
             storeReducer({
                 type: GlobalStoreActionType.CREATE_NEW_LIST,
                 payload: newList
-            }
-            );            
+            });
+            setStore(prev => ({ ...prev, isNewPlaylist: true }));
         }
         else {
             console.log("FAILED TO CREATE A NEW LIST");

@@ -15,11 +15,15 @@ import { GlobalStoreContext } from '../store/index.js'
 export default function WorkspaceScreen() {
     const { store } = useContext(GlobalStoreContext);
     store.history = useNavigate();
-    
+
     let modalJSX = "";
     if (store.isEditSongModalOpen()) {
         modalJSX = <MUIEditSongModal />;
     }
+    // When closing this screen, there is a brief moment where store.currentList becomes null 
+    // but we have not yet navigated away    
+    if (!store.currentList) return null;
+
     return (
         <Box id="list-selector-list">
         <List 

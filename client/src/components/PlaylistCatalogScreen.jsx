@@ -4,6 +4,7 @@ import AuthContext from '../auth';
 import storeRequestSender from '../store/requests';
 import { GlobalStoreContext } from '../store'
 import WorkspaceScreen from './WorkspaceScreen';
+import PlaylistCard from './PlaylistCard';
 
 const filterListReducer = (state, action) => {
     switch (action.type) {
@@ -80,9 +81,7 @@ function PlaylistCatalogScreen() {
 
     let displayPlaylists = (playlists.data && playlists.data.length !== 0) ? playlists.data.map(playlist => (
         <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
-            <div>{playlist.name}</div>
-            <div>{playlist.songs?.length || 0} songs • {playlist.ownerEmail}</div>
-            <div>Total Listens: {computeTotalListens(playlist)}</div>
+            <PlaylistCard key={playlist._id} idNamePair={{ _id: playlist._id, name: playlist.name }} />
         </div>
     )) : <div>No playlists found.</div>;
 
