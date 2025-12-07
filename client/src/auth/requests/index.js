@@ -31,7 +31,7 @@ export const loginUser = (email, password) => {
 export const logoutUser = () => fetch('http://localhost:4000/auth/logout/', {
     credentials: 'include',
 })
-export const registerUser = (firstName, lastName, email, password, passwordVerify) => {
+export const registerUser = (username, email, password, passwordVerify) => {
     return fetch('http://localhost:4000/auth/register/', {
         method: 'POST', 
         headers: {
@@ -39,8 +39,7 @@ export const registerUser = (firstName, lastName, email, password, passwordVerif
         },
         credentials: 'include', 
         body: JSON.stringify({
-            firstName : firstName,
-            lastName : lastName,
+            username : username,
             email : email,
             password : password,
             passwordVerify : passwordVerify

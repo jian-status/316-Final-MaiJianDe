@@ -38,15 +38,14 @@ test('testing resetDB output', async () => {
       try {
         const joe = await db.getUserByEmail('joe@shmo.com')
         expect(joe).toBeTruthy()
-        expect(joe.firstName).toBe('Joe')
-        expect(joe.lastName).toBe('Shmo')
+        expect(joe.username).toBe('JoeShmo')
 
         const joePlaylists = await db.getPlaylistsByOwner('joe@shmo.com')
         expect(joePlaylists).toHaveLength(2)
 
         const jian = await db.getUserByEmail('jian@gmail.com')
         expect(jian).toBeTruthy()
-        expect(jian.firstName).toBe('Jian')
+        expect(jian.username).toBe('JianMai')
 
         const jianPlaylists = await db.getPlaylistsByOwner('jian@gmail.com')
         expect(jianPlaylists).toHaveLength(1)
@@ -62,8 +61,7 @@ test('testing getUserByEmail output', async () => {
         const user = await db.getUserByEmail('jian@gmail.com')
         
         expect(user).toBeTruthy()
-        expect(user.firstName).toBe('Jian')
-        expect(user.lastName).toBe('Mai')
+        expect(user.username).toBe('JianMai')
         expect(user.email).toBe('jian@gmail.com')
         expect(user.passwordHash).toBe('$2a$10$dPEwsAVi1ojv2RfxxTpZjuKSAbep7zEKb5myegm.ATbQ4sJk4agGu')
       } catch (error) {
@@ -78,8 +76,7 @@ test('testing getUserByEmail output', async () => {
         
         expect(userById).toBeTruthy()
         expect(userById.email).toBe('jian@gmail.com')
-        expect(userById.firstName).toBe('Jian')
-        expect(userById.lastName).toBe('Mai')
+        expect(userById.username).toBe('JianMai')
       } catch (error) {
         console.warn(`${dbName} testing getUser output failed:`, error.message)
       }
@@ -88,8 +85,7 @@ test('testing getUserByEmail output', async () => {
     test('testing createUser output', async () => {
       try {
         const newUser = await db.createUser({
-          firstName: 'Aloh',
-          lastName: 'K',
+          username: 'AlohK',
           email: 'AlohK@gmail.com',
           passwordHash: '2b392e6a-4d28-464a-ae95-6363f2f5d482'
         })
@@ -97,8 +93,7 @@ test('testing getUserByEmail output', async () => {
         expect(newUser).toBeTruthy()
 
         const dbUser = await db.getUserByEmail('AlohK@gmail.com')
-        expect(dbUser.firstName).toBe('Aloh')
-        expect(dbUser.lastName).toBe('K')
+        expect(dbUser.username).toBe('AlohK')
         expect(dbUser.email).toBe('AlohK@gmail.com')
         expect(dbUser.passwordHash).toBe('2b392e6a-4d28-464a-ae95-6363f2f5d482')
       } catch (error) {
@@ -111,14 +106,12 @@ test('testing getUserByEmail output', async () => {
         const user = await db.getUserByEmail('jian@gmail.com')
     
         await db.updateUser(user._id, {
-          firstName: 'Awpeo',
-          lastName: 'AA',
+          username: 'AwpeoAA',
           email: 'jian.updated@gmail.com'
         })
         
         const getUser = await db.getUser(user._id)
-        expect(getUser.firstName).toBe('Awpeo')
-        expect(getUser.lastName).toBe('AA')
+        expect(getUser.username).toBe('AwpeoAA')
         expect(getUser.email).toBe('jian.updated@gmail.com')
         
         const userByNewEmail = await db.getUserByEmail('jian.updated@gmail.com')

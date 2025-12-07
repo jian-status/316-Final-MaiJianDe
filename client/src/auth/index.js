@@ -76,10 +76,10 @@ function AuthContextProvider(props) {
         }
     }
 
-    auth.registerUser = async function(firstName, lastName, email, password, passwordVerify) {
+    auth.registerUser = async function(username, email, password, passwordVerify) {
         console.log("REGISTERING USER");
         try{   
-            const response = await authRequestSender.registerUser(firstName, lastName, email, password, passwordVerify);   
+            const response = await authRequestSender.registerUser(username, email, password, passwordVerify);   
             if (response.status === 200) {
                 const data = await response.json();
                 console.log("Registered User");
@@ -149,9 +149,16 @@ function AuthContextProvider(props) {
 
     auth.getUserInitials = function() {
         let initials = "";
-        if (auth.user) {
-            initials += auth.user.firstName.charAt(0);
-            initials += auth.user.lastName.charAt(0);
+        if (auth.user && auth.user.username && auth.user.username.length > 0) {
+            initials += auth.user.username.charAt(0);
+            // if username includes a separator (like a space), consider second initial
+            if (auth.user.username.includes(' ')) {
+                const parts = auth.user.username.split(' ');
+                if (parts.length > 1 && parts[1].length > 0) initials += parts[1].charAt(0);
+            } else if (auth.user.username.length > 1) {
+                // include second char for better initials when username is one word
+                initials += auth.user.username.charAt(1);
+            }
         }
         console.log("user initials: " + initials);
         return initials;

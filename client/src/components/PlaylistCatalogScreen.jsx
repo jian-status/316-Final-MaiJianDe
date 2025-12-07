@@ -20,6 +20,10 @@ const filterListReducer = (state, action) => {
             return state;
     }
 };
+const computeTotalListens = (playlist) => (playlist?.songs || []).reduce((acc, s) => acc + (s.listens || 0), 0);
+const handlePlaylistClick = (playlist) => {
+    console.log("Clicked playlist: ", playlist);
+}
 
 const sortPlaylistsReducer = (state, action) => {
     switch (action.type) {
@@ -63,7 +67,7 @@ function PlaylistCatalogScreen() {
         <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
             <div>{playlist.name}</div>
             <div>{playlist.songs?.length || 0} songs • {playlist.ownerEmail}</div>
-            <div>Total Listens: TODO</div>
+            <div>Total Listens: {computeTotalListens(playlist)}</div>
         </div>
     )) : <div>No playlists found.</div>;
 
@@ -114,7 +118,7 @@ function PlaylistCatalogScreen() {
                         <button onClick={() => {
                             dispatchFilterList({ type: 'CLEAR' });
                             dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: null });
-                            setSelectedPlaylist(null);
+                            handlePlaylistClick(null);
                         }}>Clear</button>
                     </div>
                 </div>

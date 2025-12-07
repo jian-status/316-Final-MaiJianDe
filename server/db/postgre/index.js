@@ -20,21 +20,17 @@ User.init({
     primaryKey: true,
     defaultValue: DataTypes.UUIDV4
   },
-  firstName: {
+  username: {
     type: DataTypes.STRING,
-    field: 'FirstName',
-    allowNull: false 
-  },
-  lastName: { 
-    type: DataTypes.STRING,
-    field: 'lastName',
-    allowNull: false 
+    field: 'Username',
+    allowNull: false
   },
   email: { 
     type: DataTypes.STRING, 
     allowNull: false,
     field: 'Email',
-    unique: true
+    unique: true,
+    allowNull: false
   },
   passwordHash: { 
     type: DataTypes.STRING,
@@ -51,18 +47,18 @@ class Song extends Model {}
 
 Song.init({
   title: { 
-    type: DataTypes.STRING, 
+    type: DataTypes.TEXT,
     allowNull: false 
   },
   artist: { 
-    type: DataTypes.STRING, 
+    type: DataTypes.TEXT,
     allowNull: false 
   },
   year: { 
     type: DataTypes.INTEGER
   },
   youTubeId: { 
-    type: DataTypes.STRING 
+    type: DataTypes.TEXT
   },
   listens: {
     type: DataTypes.INTEGER,
@@ -92,7 +88,7 @@ class Playlist extends Model {}
 
 Playlist.init({
   _id: {
-    type: DataTypes.STRING, // Let primary id be a string for mongodb compatibility
+    type: DataTypes.STRING,
     primaryKey: true,
     defaultValue: DataTypes.UUIDV4
   },
@@ -183,7 +179,7 @@ class PostgresManager extends DatabaseManager {
   }
 
   async resetDB() {
-    const testData = require("../../test/data/example-db-data.json");
+    const testData = require("../../test/data/PlaylisterData.json");
 
     console.log("Resetting the Postgre DB");
 
