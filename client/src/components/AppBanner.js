@@ -76,13 +76,13 @@ export default function AppBanner() {
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>        
 
-    let editToolbar = "";
+    let editToolbar = null;
     let menu = loggedOutMenu;
-    if (auth.loggedIn) {
+    if (auth.loggedIn && store.isEditingPlaylist) {
         menu = loggedInMenu;
-        if (store.currentList) {
-            editToolbar = <EditToolbar />;
-        }
+        editToolbar = <EditToolbar />;
+    } else if (auth.loggedIn) {
+        menu = loggedInMenu;
     }
     
     function getAccountMenu(loggedIn) {

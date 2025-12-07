@@ -51,12 +51,10 @@ const sortPlaylistsReducer = (state, action) => {
 function PlaylistCatalogScreen() {
     const [filterList, dispatchFilterList] = useReducer(filterListReducer, { playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '' });
     const [playlists, dispatchPlaylists] = useReducer(sortPlaylistsReducer, { data: null, sortBy: 'SORT_BY_playlistNameAZ' });
-    const [editingPlaylist, setEditingPlaylist] = React.useState(false);
     const { auth } = useContext(AuthContext);
     const { store } = useContext(GlobalStoreContext);
     const handlePlaylistCreation = () => {
         store.createNewList();
-        setEditingPlaylist(true);
     }
     const handleSearch = async () => {
         try {
@@ -77,7 +75,7 @@ function PlaylistCatalogScreen() {
             console.log("User is logged in, loading playlists");
         }
         handleSearch();
-    }, []);
+    }, [store.currentList]);
 
     let displayPlaylists = (playlists.data && playlists.data.length !== 0) ? playlists.data.map(playlist => (
         <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
@@ -86,7 +84,7 @@ function PlaylistCatalogScreen() {
     )) : <div>No playlists found.</div>;
 
     return (
-        (editingPlaylist && store.currentList) ? <WorkspaceScreen /> :
+        (store.isEditingPlaylist && store.currentList) ? <WorkspaceScreen /> :
         <div className="grid grid-cols-5">
             <div className="col-span-2 p-3">
                 <div className="flex flex-col gap-2">

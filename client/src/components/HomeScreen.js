@@ -32,14 +32,15 @@ const HomeScreen = () => {
         listCard = 
             <List sx={{width: '100%', bgcolor: 'background.paper', mb:"20px" }}>
             {
-                store.idNamePairs.map((pair) => (
-                    <PlaylistCard
-                        key={pair._id}
-                        idNamePair={pair}
-                        selected={false}
-                    />
-                ))
-                
+                store.idNamePairs.map((pair) => {
+                    return (
+                        <PlaylistCard
+                            key={pair._id}
+                            idNamePair={pair}
+                            selected={false}
+                        />
+                    );
+                })
             }
             <Fab sx={{transform:"translate(1150%, 10%)"}}
                 color="primary" 

@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { GlobalStoreContext } from '../store'
 import Box from '@mui/material/Box';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -6,7 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import IconButton from '@mui/material/IconButton';
 import ListItem from '@mui/material/ListItem';
 import TextField from '@mui/material/TextField';
-
+import { getPlaylistById } from '../store/requests/index';
 /*
     This is a card in our list of top 5 lists. It lets select
     a list for editing and it has controls for changing its 
@@ -17,9 +17,17 @@ import TextField from '@mui/material/TextField';
 function PlaylistCard(props) {
     const { store } = useContext(GlobalStoreContext);
     const [editActive, setEditActive] = useState(false);
-    const [text, setText] = useState("");
     const { idNamePair } = props;
-
+    const [text, setText] = useState(idNamePair.name);
+    const [songs, setSongs] = useState([]);
+    useEffect(() => {
+        getPlaylistById(idNamePair._id)
+        .then((res) => res.json())
+        .then((data) => {
+            setSongs(data.playlist.songs);
+        })
+        .catch((err) => console.log(err));
+    }, []);
     function handleLoadList(event, id) {
         console.log("handleLoadList for " + id);
         if (!event.target.disabled) {
@@ -64,32 +72,39 @@ function PlaylistCard(props) {
     function handleUpdateText(event) {
         setText(event.target.value);
     }
-
+    console.log(songs)
     let cardElement =
         <ListItem
             id={idNamePair._id}
             key={idNamePair._id}
-            sx={{borderRadius:"15px", bgcolor: '#8000F00F', marginTop: '15px', display: 'flex', /*p: 1*/ }}
+            sx={{borderRadius:"15px", bgcolor: '#8000F00F', marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}
             style={{transform:"translate(1%,0%)", width: '98%'}}
             button
-            onClick={(event) => {
-                handleLoadList(event, idNamePair._id)
-            }}
         >
-            <Box sx={{ p: 1, flexGrow: 1 }}>{idNamePair.name}</Box>
-            <Box sx={{ p: 1 }}>
-                <IconButton onClick={handleToggleEdit} aria-label='edit'>
-                    <EditIcon />
-                </IconButton>
-            </Box>
-            <Box sx={{ p: 1 }}>
-                <IconButton onClick={(event) => {
-                        handleDeleteList(event, idNamePair._id)
-                    }} aria-label='delete'>
-                    <DeleteIcon />
-                </IconButton>
-            </Box>
+            <div className='flex items-center justify-between w-full'>
+                <Box sx={{ p: 1, width: '100%' }}>{idNamePair.name}</Box>
+                <div className='flex'>
+                    <Box sx={{ p: 1 }}>
+                        <IconButton onClick={handleToggleEdit} aria-label='edit'>
+                            <EditIcon />
+                        </IconButton>
+                    </Box>
+                    <Box sx={{ p: 1 }}>
+                        <IconButton onClick={(event) => {
+                                handleDeleteList(event, idNamePair._id)
+                            }} aria-label='delete'>
+                            <DeleteIcon />
+                        </IconButton>
+                    </Box>
+                </div>
+            </div>
+            <div>
+                {songs.map((song, index) => (
+                    <p>{index + 1}. {song.title}</p>
+                ))}
+            </div>
         </ListItem>
+        
 
     if (editActive) {
         cardElement =
@@ -102,7 +117,7 @@ function PlaylistCard(props) {
                 name="name"
                 autoComplete="Playlist Name"
                 className='list-card'
-                onKeyPress={handleKeyPress}
+                onKeyUp={handleKeyPress}
                 onChange={handleUpdateText}
                 defaultValue={idNamePair.name}
                 autoFocus

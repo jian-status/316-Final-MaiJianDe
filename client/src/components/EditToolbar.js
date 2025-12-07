@@ -25,7 +25,8 @@ function EditToolbar() {
         store.redo();
     }
     function handleCancel() {
-        store.deleteList(store.currentList.id);
+        store.deleteList(store.currentList._id);
+        store.setIsEditingPlaylist(false);
     }
     function handleSave() {
         store.closeCurrentList();

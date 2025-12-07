@@ -61,8 +61,13 @@ function GlobalStoreContextProvider(props) {
         listNameActive: false,
         listIdMarkedForDeletion: null,
         isNewPlaylist: false,
-        listMarkedForDeletion: null
+        listMarkedForDeletion: null,
+        isEditingPlaylist: false
     });
+        // Setter for isEditingPlaylist state
+        store.setIsEditingPlaylist = function (value) {
+            setStore(prev => ({ ...prev, isEditingPlaylist: value }));
+        }
     const navigate = useNavigate();
 
     console.log("inside useGlobalStore");
@@ -79,6 +84,7 @@ function GlobalStoreContextProvider(props) {
             // LIST UPDATE OF ITS NAME
             case GlobalStoreActionType.CHANGE_LIST_NAME: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: payload.idNamePairs,
                     currentList: payload.playlist,
@@ -93,6 +99,7 @@ function GlobalStoreContextProvider(props) {
             // STOP EDITING THE CURRENT LIST
             case GlobalStoreActionType.CLOSE_CURRENT_LIST: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: store.idNamePairs,
                     currentList: null,
@@ -107,6 +114,7 @@ function GlobalStoreContextProvider(props) {
             // CREATE A NEW LIST
             case GlobalStoreActionType.CREATE_NEW_LIST: {                
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: store.idNamePairs,
                     currentList: payload,
@@ -121,6 +129,7 @@ function GlobalStoreContextProvider(props) {
             // GET ALL THE LISTS SO WE CAN PRESENT THEM
             case GlobalStoreActionType.LOAD_ID_NAME_PAIRS: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: payload,
                     currentList: null,
@@ -129,12 +138,14 @@ function GlobalStoreContextProvider(props) {
                     newListCounter: store.newListCounter,
                     listNameActive: false,
                     listIdMarkedForDeletion: null,
-                    listMarkedForDeletion: null
+                    listMarkedForDeletion: null,
+                    isEditingPlaylist: false
                 });
             }
             // PREPARE TO DELETE A LIST
             case GlobalStoreActionType.MARK_LIST_FOR_DELETION: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.DELETE_LIST,
                     idNamePairs: store.idNamePairs,
                     currentList: null,
@@ -149,6 +160,7 @@ function GlobalStoreContextProvider(props) {
             // UPDATE A LIST
             case GlobalStoreActionType.SET_CURRENT_LIST: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: store.idNamePairs,
                     currentList: payload,
@@ -163,6 +175,7 @@ function GlobalStoreContextProvider(props) {
             // START EDITING A LIST NAME
             case GlobalStoreActionType.SET_LIST_NAME_EDIT_ACTIVE: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: store.idNamePairs,
                     currentList: payload,
@@ -177,6 +190,7 @@ function GlobalStoreContextProvider(props) {
             // 
             case GlobalStoreActionType.EDIT_SONG: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.EDIT_SONG,
                     idNamePairs: store.idNamePairs,
                     currentList: store.currentList,
@@ -190,6 +204,7 @@ function GlobalStoreContextProvider(props) {
             }
             case GlobalStoreActionType.REMOVE_SONG: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: store.idNamePairs,
                     currentList: store.currentList,
@@ -203,6 +218,7 @@ function GlobalStoreContextProvider(props) {
             }
             case GlobalStoreActionType.HIDE_MODALS: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: store.idNamePairs,
                     currentList: store.currentList,
@@ -216,6 +232,7 @@ function GlobalStoreContextProvider(props) {
             }
             case GlobalStoreActionType.CLEAR_STORE: {
                 return setStore({
+                    ...store,
                     currentModal : CurrentModal.NONE,
                     idNamePairs: [],
                     currentList: null,
@@ -313,7 +330,7 @@ function GlobalStoreContextProvider(props) {
             payload: {}
         });
         tps.clearAllTransactions();
-        setStore(prev => ({ ...prev, isNewPlaylist: false }));
+        setStore(prev => ({ ...prev, isNewPlaylist: false, isEditingPlaylist: false }));
         navigate("/");
     }
 
@@ -328,6 +345,7 @@ function GlobalStoreContextProvider(props) {
 
     // THIS FUNCTION CREATES A NEW LIST
     store.createNewList = async function () {
+
         let newListName = "Untitled" + store.newListCounter;
         const response = await storeRequestSender.createPlaylist(newListName, [], auth.user.email);
         console.log("createNewList response: " + response);
@@ -342,7 +360,7 @@ function GlobalStoreContextProvider(props) {
                 type: GlobalStoreActionType.CREATE_NEW_LIST,
                 payload: newList
             });
-            setStore(prev => ({ ...prev, isNewPlaylist: true }));
+            setStore(prev => ({ ...prev, isNewPlaylist: true, isEditingPlaylist: true }));
         }
         else {
             console.log("FAILED TO CREATE A NEW LIST");
@@ -360,7 +378,7 @@ function GlobalStoreContextProvider(props) {
                     console.log(pairsArray);
                     storeReducer({
                         type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
-                        payload: pairsArray
+                        payload: pairsArray,
                     });
                 }
                 else {
@@ -456,7 +474,6 @@ function GlobalStoreContextProvider(props) {
                                     type: GlobalStoreActionType.SET_CURRENT_LIST,
                                     payload: playlist
                                 });
-                                navigate("/playlist/" + playlist._id);
                             } else {
                                 console.error("Failed to update playlist:", data);
                             }
