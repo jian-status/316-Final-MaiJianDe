@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 
 function SongCard(props) {
     const { store } = useContext(GlobalStoreContext);
-    const { song, index } = props;
+    const { song, index, isSongCatalog = true } = props;
 
     function handleDragStart(event) {
         event.dataTransfer.setData("song", index);
@@ -34,6 +34,9 @@ function SongCard(props) {
         store.addRemoveSongTransaction(song, index);
     }
     function handleClick(event) {
+        if (isSongCatalog) {
+            return;
+        }
         // DOUBLE CLICK IS FOR SONG EDITING
         if (event.detail === 2) {
             console.log("double clicked");
@@ -47,27 +50,34 @@ function SongCard(props) {
             key={index}
             id={'song-' + index + '-card'}
             className={cardClass}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            draggable="true"
-            onClick={handleClick}
+            onDragStart={isSongCatalog ? handleDragStart : null}
+            onDragOver={isSongCatalog ? handleDragOver: null}
+            onDragEnter={isSongCatalog ? handleDragEnter : null}
+            onDragLeave={isSongCatalog ? handleDragLeave : null}
+            onDrop={isSongCatalog ? handleDrop : null}
+            draggable={isSongCatalog}
+            onClick={isSongCatalog ? handleClick : null}
         >
-            {index + 1}.
+            {isSongCatalog ? '' : index + 1}
             <a
                 id={'song-' + index + '-link'}
                 className="song-link"
                 href={"https://www.youtube.com/watch?v=" + song.youTubeId}>
                 {song.title} ({song.year}) by {song.artist}
             </a>
+            {isSongCatalog || (
             <Button
                 sx={{transform:"translate(-5%, -5%)", width:"5px", height:"30px"}}
                 variant="contained"
                 id={"remove-song-" + index}
                 className="list-card-button"
                 onClick={handleRemoveSong}>{"\u2715"}</Button>
+            )}
+            <div className='flex justify-between text-sm'>
+                <p>Listens: {song.listens}</p>
+                <p>Playlists: {song.playlistCount}</p>
+            </div>
+
         </div>
     );
 }

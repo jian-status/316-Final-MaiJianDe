@@ -1,5 +1,9 @@
 import React, { useReducer } from 'react';
+import SongCard from './SongCard';
 
+const handleSongClick = (song) => {
+    console.log('Song clicked:', song);
+}
 const filterListReducer = (state, action) => {
     switch (action.type) {
         case 'FILTER_BY_TITLE':
@@ -60,7 +64,6 @@ const sortSongsReducer = (state, action) => {
     }
 }
 function SongCatalogScreen() {
-
     const [songs, dispatchSongs] = useReducer(sortSongsReducer, { data: null, sortBy: 'SORT_BY_songTitle' });
     const [filterList, dispatchFilterList] = useReducer(filterListReducer, { 
         title: '',
@@ -68,7 +71,11 @@ function SongCatalogScreen() {
         year: '',
         sortBy: 'SORT_BY_songTitle'
     });
+    const [selectedSong, setSelectedSong] = React.useState(null);
 
+    const handleSongClick = (song) => {
+        setSelectedSong(song);
+    };
 
     const handleSearch = async () => {
         console.log('filterList state:', filterList);
@@ -96,7 +103,11 @@ function SongCatalogScreen() {
         }
     };
 
-    let displaySongs = (songs.data && songs.data.length !== 0) ? songs.data.map(song => <div>{song.title} by {song.artist} ({song.year})</div>) : <div>No songs found.</div>;
+    let displaySongs = (songs.data && songs.data.length !== 0) ? songs.data.map(song =>
+        <div onClick={() => handleSongClick(song)} key={song._id}>
+            <SongCard song={song}/>
+        </div>
+    ) : <div>No songs found.</div>;
     console.log(displaySongs)
     return (
         <div className="grid grid-cols-5">
@@ -126,6 +137,19 @@ function SongCatalogScreen() {
                         className="px-5 py-2 border rounded"
                     />
                 </div>
+                {selectedSong && selectedSong.youTubeId && (
+                    <div className="my-4">
+                        <iframe
+                            width="100%"
+                            height="315"
+                            src={`https://www.youtube.com/embed/${selectedSong.youTubeId}`}
+                            title="YouTube video player"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                )}
                 <div className="flex gap-2">
                     <button 
                         onClick={handleSearch}
@@ -144,7 +168,7 @@ function SongCatalogScreen() {
             <div className="col-span-3 p-3">
                 { songs.data === null ? <div>Begin by using the search fields to filter songs.</div> : (
                     <div>
-                        <div>
+                        <div className="flex justify-between items-center">
                             <div className="flex gap-2 items-center">
                                 <span>Sort by:</span>
                                 <select 
@@ -162,10 +186,14 @@ function SongCatalogScreen() {
                                     <option value="SORT_BY_songYear">Song Year</option>
                                 </select>
                             </div>
+                            <div>
+                                <span>{songs.data.length} Songs</span>
+                            </div>
                         </div>
-                        <div>
+                        <div className="overflow-y-auto max-h-[55vh] mt-4 flex flex-col gap-2">
                             { displaySongs }
                         </div>
+                        <button>Add Song</button>
                     </div>
                 )}
             </div>

@@ -64,6 +64,11 @@ Song.init({
   youTubeId: { 
     type: DataTypes.STRING 
   },
+  listens: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
   playlistCount: {
     type: DataTypes.INTEGER,
     field: 'PlaylistCount',

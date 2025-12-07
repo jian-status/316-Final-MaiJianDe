@@ -168,9 +168,9 @@ body {
 .selected-list-card,
 .unselected-list-card {
   font-size: 18pt;
-  margin: 10px;
+  margin: 5px;
   padding: 20px;
-  border-radius: 25px;
+  border-radius: 5px;
 }
 
 .list-card:aria-disabled,
