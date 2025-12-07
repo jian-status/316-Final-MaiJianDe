@@ -75,7 +75,8 @@ body {
 
 #edit-toolbar {
   background-color: transparent;
-  transform: translate(41%, 0%);
+  display: flex;
+  justify-content: center;
 }
 
 .playlister-button,
@@ -314,7 +315,6 @@ input {
 
 .modal-textfield {
   float: right;
-  width: 200px;
 }
 
 .modal-dialog {

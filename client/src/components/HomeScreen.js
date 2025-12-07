@@ -1,10 +1,12 @@
 import { useContext, useEffect } from 'react'
 import { GlobalStoreContext } from '../store'
 import PlaylistCard from './PlaylistCard.js'
+import WorkspaceScreen from './WorkspaceScreen'
 import MUIDeleteModal from './MUIDeleteModal'
 
 import AddIcon from '@mui/icons-material/Add';
 import Fab from '@mui/material/Fab'
+import Button from '@mui/material/Button';
 import List from '@mui/material/List';
 import Box from '@mui/material/Box'
 /*
@@ -23,7 +25,10 @@ const HomeScreen = () => {
         store.createNewList();
     }
     let listCard = "";
-    if (store) {
+    const handleCloseWorkspace = () => {
+        store.closeCurrentList();
+    }
+    if (store && !store.currentList) {
         listCard = 
             <List sx={{width: '100%', bgcolor: 'background.paper', mb:"20px" }}>
             {
@@ -46,6 +51,14 @@ const HomeScreen = () => {
             </Fab>
             </List>;
     }
+    if (store && store.currentList) {
+        return (
+            <div id="playlist-selector">
+                hello
+            </div>
+        );
+    }
+
     return (
         <div id="playlist-selector">
             <div id="list-selector-heading">

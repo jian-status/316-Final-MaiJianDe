@@ -24,7 +24,10 @@ function EditToolbar() {
     function handleRedo() {
         store.redo();
     }
-    function handleClose() {
+    function handleCancel() {
+        store.deleteList(store.currentList.id);
+    }
+    function handleComplete() {
         store.closeCurrentList();
     }
     return (
@@ -52,10 +55,17 @@ function EditToolbar() {
             </Button>
             <Button 
                 disabled={!store.canClose()}
-                id='close-button'
-                onClick={handleClose}
+                id='complete-button'
+                onClick={handleComplete}
                 variant="contained">
-                    <CloseIcon />
+                    Complete
+            </Button>
+            <Button 
+                disabled={!store.canClose()}
+                id='cancel-button'
+                onClick={handleCancel}
+                variant="contained">
+                    Cancel
             </Button>
         </div>
     )

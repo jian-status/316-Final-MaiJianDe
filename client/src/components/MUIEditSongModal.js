@@ -12,13 +12,10 @@ const style1 = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 345,
-    height: 250,
-    backgroundSize: "contain",
-    backgroundImage: `url(https://i.insider.com/602ee9ced3ad27001837f2ac?})`,
     border: '3px solid #000',
     padding: '20px',
     boxShadow: 24,
+    width: '515px',
 };
 
 export default function MUIEditSongModal() {
@@ -62,7 +59,7 @@ export default function MUIEditSongModal() {
         <Modal
             open={store.currentModal === "EDIT_SONG"}
         >
-        <Box sx={style1}>
+        <Box sx={style1} className="bg-stone-300">
             <div id="edit-song-modal" data-animation="slideInOutLeft">
             <Typography 
                 sx={{fontWeight: 'bold'}} 
@@ -73,29 +70,32 @@ export default function MUIEditSongModal() {
             <Typography 
                 sx={{mt: "10px", color: "#702963", fontWeight:"bold", fontSize:"30px"}} 
                 id="modal-modal-title" variant="h6" component="h2">
-                Title: <input id="edit-song-modal-title-textfield" className='modal-textfield' type="text" defaultValue={title} onChange={handleUpdateTitle} />
+                Title: <input id="edit-song-modal-title-textfield" className='modal-textfield px-2' type="text" defaultValue={title} onChange={handleUpdateTitle} />
             </Typography>
             <Typography 
                 sx={{color: "#702963", fontWeight:"bold", fontSize:"30px"}} 
                 id="modal-modal-artist" variant="h6" component="h2">
-                Artist: <input id="edit-song-modal-artist-textfield" className='modal-textfield' type="text" defaultValue={artist} onChange={handleUpdateArtist} />
+                Artist: <input id="edit-song-modal-artist-textfield" className='modal-textfield px-2' type="text" defaultValue={artist} onChange={handleUpdateArtist} />
             </Typography>
             <Typography 
                 sx={{color: "#702963", fontWeight:"bold", fontSize:"30px"}} 
                 id="modal-modal-year" variant="h6" component="h2">
-                Year: <input id="edit-song-modal-year-textfield" className='modal-textfield' type="text" defaultValue={year} onChange={handleUpdateYear} />
+                Year: <input id="edit-song-modal-year-textfield" className='modal-textfield px-2' type="text" defaultValue={year} onChange={handleUpdateYear} />
             </Typography>
             <Typography 
                 sx={{color: "#702963", fontWeight:"bold", fontSize:"25px"}} 
                 id="modal-modal-youTubeId" variant="h6" component="h2">
-                YouTubeId: <input id="edit-song-modal-youTubeId-textfield" className='modal-textfield' type="text" defaultValue={youTubeId} onChange={handleUpdateYouTubeId} />
+                YouTubeId: <input id="edit-song-modal-youTubeId-textfield" className='modal-textfield px-2' type="text" defaultValue={youTubeId} onChange={handleUpdateYouTubeId} />
             </Typography>
-            <Button 
-                sx={{color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, p:"5px", mt:"20px"}} variant="outlined" 
-                id="edit-song-confirm-button" onClick={handleConfirmEditSong}>Confirm</Button>
-            <Button 
-                sx={{opacity: 0.80, color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, p:"5px", mt:"20px", ml:"197px"}} variant="outlined" 
-                id="edit-song-confirm-button" onClick={handleCancelEditSong}>Cancel</Button>
+            <div className='flex gap-4'>
+                <Button 
+                    sx={{color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
+                    id="edit-song-confirm-button" onClick={handleConfirmEditSong} className='px-4 py-2'>Confirm</Button>
+                <Button 
+                    sx={{opacity: 0.80, color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
+                    id="edit-song-confirm-button" onClick={handleCancelEditSong}>Cancel</Button>
+
+            </div>
             </div>
         </Box>
         </Modal>

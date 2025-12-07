@@ -12,7 +12,7 @@ import { GlobalStoreContext } from '../store/index.js'
     
     @author McKilla Gorilla
 */
-function WorkspaceScreen() {
+export default function WorkspaceScreen() {
     const { store } = useContext(GlobalStoreContext);
     store.history = useNavigate();
     
@@ -33,6 +33,7 @@ function WorkspaceScreen() {
                         key={'playlist-song-' + (index)}
                         index={index}
                         song={song}
+                        isEditable={true}
                     />
                 ))
             }
@@ -41,5 +42,3 @@ function WorkspaceScreen() {
          </Box>
     )
 }
-
-export default WorkspaceScreen;

@@ -1,6 +1,9 @@
-import React, { useReducer } from 'react';
+import React, { useReducer, useContext, useEffect } from 'react';
 import SongCard from './SongCard';
+import AuthContext from '../auth';
 import storeRequestSender from '../store/requests';
+import { GlobalStoreContext } from '../store'
+import WorkspaceScreen from './WorkspaceScreen';
 
 const filterListReducer = (state, action) => {
     switch (action.type) {
@@ -20,11 +23,10 @@ const filterListReducer = (state, action) => {
             return state;
     }
 };
-const computeTotalListens = (playlist) => (playlist?.songs || []).reduce((acc, s) => acc + (s.listens || 0), 0);
+const computeTotalListens = (playlist) => {}
 const handlePlaylistClick = (playlist) => {
     console.log("Clicked playlist: ", playlist);
 }
-
 const sortPlaylistsReducer = (state, action) => {
     switch (action.type) {
         case 'SORT_BY_uniqueListenersHiLo':
@@ -48,7 +50,13 @@ const sortPlaylistsReducer = (state, action) => {
 function PlaylistCatalogScreen() {
     const [filterList, dispatchFilterList] = useReducer(filterListReducer, { playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '' });
     const [playlists, dispatchPlaylists] = useReducer(sortPlaylistsReducer, { data: null, sortBy: 'SORT_BY_playlistNameAZ' });
-
+    const [editingPlaylist, setEditingPlaylist] = React.useState(false);
+    const { auth } = useContext(AuthContext);
+    const { store } = useContext(GlobalStoreContext);
+    const handlePlaylistCreation = () => {
+        store.createNewList();
+        setEditingPlaylist(true);
+    }
     const handleSearch = async () => {
         try {
             const response = await storeRequestSender.getPlaylists();
@@ -63,6 +71,13 @@ function PlaylistCatalogScreen() {
         }
     }
 
+    useEffect(() => {
+        if (auth.loggedIn) {
+            console.log("User is logged in, loading playlists");
+        }
+        handleSearch();
+    }, []);
+
     let displayPlaylists = (playlists.data && playlists.data.length !== 0) ? playlists.data.map(playlist => (
         <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
             <div>{playlist.name}</div>
@@ -72,6 +87,7 @@ function PlaylistCatalogScreen() {
     )) : <div>No playlists found.</div>;
 
     return (
+        (editingPlaylist && store.currentList) ? <WorkspaceScreen /> :
         <div className="grid grid-cols-5">
             <div className="col-span-2 p-3">
                 <div className="flex flex-col gap-2">
@@ -123,7 +139,7 @@ function PlaylistCatalogScreen() {
                     </div>
                 </div>
             </div>
-            <div className="col-span-3 p-3">
+            <div className="col-span-3 p-3 flex flex-col gap-4">
                 {playlists.data === null ? <div>Click search to load your playlists.</div> : (
                     <div>
                         <div className="flex justify-between items-center">
@@ -147,6 +163,9 @@ function PlaylistCatalogScreen() {
                         </div>
                     </div>
                 )}
+                <button className='bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 w-32 text-white font-bold' onClick={handlePlaylistCreation}>
+                    New Playlist
+                </button>
             </div>
         </div>
     );

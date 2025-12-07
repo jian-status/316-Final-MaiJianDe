@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 
 function SongCard(props) {
     const { store } = useContext(GlobalStoreContext);
-    const { song, index, isSongCatalog = true } = props;
+    const { song, index, isEditable = false } = props;
 
     function handleDragStart(event) {
         event.dataTransfer.setData("song", index);
@@ -34,9 +34,7 @@ function SongCard(props) {
         store.addRemoveSongTransaction(song, index);
     }
     function handleClick(event) {
-        if (isSongCatalog) {
-            return;
-        }
+        console.log("clicking on song card " + index);
         // DOUBLE CLICK IS FOR SONG EDITING
         if (event.detail === 2) {
             console.log("double clicked");
@@ -50,22 +48,22 @@ function SongCard(props) {
             key={index}
             id={'song-' + index + '-card'}
             className={cardClass}
-            onDragStart={isSongCatalog ? handleDragStart : null}
-            onDragOver={isSongCatalog ? handleDragOver: null}
-            onDragEnter={isSongCatalog ? handleDragEnter : null}
-            onDragLeave={isSongCatalog ? handleDragLeave : null}
-            onDrop={isSongCatalog ? handleDrop : null}
-            draggable={isSongCatalog}
-            onClick={isSongCatalog ? handleClick : null}
+            onDragStart={isEditable ? handleDragStart : null}
+            onDragOver={isEditable ? handleDragOver: null}
+            onDragEnter={isEditable ? handleDragEnter : null}
+            onDragLeave={isEditable ? handleDragLeave : null}
+            onDrop={isEditable ? handleDrop : null}
+            draggable={isEditable}
+            onClick={isEditable ? handleClick : null}
         >
-            {isSongCatalog ? '' : index + 1}
+            {isEditable ? '' : index + 1}
             <a
                 id={'song-' + index + '-link'}
                 className="song-link"
                 href={"https://www.youtube.com/watch?v=" + song.youTubeId}>
                 {song.title} ({song.year}) by {song.artist}
             </a>
-            {isSongCatalog || (
+            {isEditable || (
             <Button
                 sx={{transform:"translate(-5%, -5%)", width:"5px", height:"30px"}}
                 variant="contained"

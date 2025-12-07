@@ -331,10 +331,7 @@ function GlobalStoreContextProvider(props) {
                 type: GlobalStoreActionType.CREATE_NEW_LIST,
                 payload: newList
             }
-            );
-
-            // IF IT'S A VALID LIST THEN LET'S START EDITING IT
-            navigate("/playlist/" + newList._id);
+            );            
         }
         else {
             console.log("FAILED TO CREATE A NEW LIST");
