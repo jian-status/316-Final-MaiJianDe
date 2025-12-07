@@ -192,30 +192,26 @@ getPlaylistPairs = async (req, res) => {
     }
 }
 getPlaylists = async (req, res) => {
-    if(auth.verifyUser(req) === null){
-        return res.status(400).json({
-            errorMessage: 'Could not authorize'
-        })
-    }
-    
     try {
-        const user = await db.getUser(req.userId);
-        if (!user) {
-            return res.status(400).json({
-                success: false,
-                error: 'getPlaylists: Could not find user'
-            });
+        const userId = auth.verifyUser(req);
+        if (userId) {
+            const user = await db.getUser(userId);
+            if (user) {
+                const playlists = await db.getPlaylistsByOwner(user.email);
+                return res.status(200).json({ success: true, data: playlists || [] });
+            } else {
+                const playlists = await db.getAllPlaylists();
+                return res.status(200).json({ success: true, data: playlists || [] });
+            }
+        } else {
+            const playlists = await db.getAllPlaylists();
+            return res.status(200).json({ success: true, data: playlists || [] });
         }
-        
-        const playlists = await db.getPlaylistsByOwner(user.email);
-        
-        return res.status(200).json({ success: true, data: playlists || [] });
-        
     } catch (error) {
         console.error("getPlaylists: Could not get playlists:", error);
-        return res.status(400).json({ 
-            success: false, 
-            error: error.message 
+        return res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 }

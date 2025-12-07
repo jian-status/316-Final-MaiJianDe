@@ -40,6 +40,8 @@ export const updatePlaylistById = (id, playlist) => {
     })
 }
 
+export const getPlaylists = () => fetch(`http://localhost:4000/store/playlists`, { method: 'GET', credentials: 'include' })
+
 export const getFilteredSongs = (title, artist, year) => {
     return fetch(`http://localhost:4000/store/songs/search`, {
         method: 'POST',
@@ -54,6 +56,7 @@ const apis = {
     deletePlaylistById,
     getPlaylistById,
     getPlaylistPairs,
+    getPlaylists,
     updatePlaylistById,
     getFilteredSongs
 }

@@ -14,7 +14,7 @@ router.post('/playlist', auth.verify, StoreController.createPlaylist)
 router.delete('/playlist/:id', auth.verify, StoreController.deletePlaylist)
 router.get('/playlist/:id', auth.verify, StoreController.getPlaylistById)
 router.get('/playlistpairs', auth.verify, StoreController.getPlaylistPairs)
-router.get('/playlists', auth.verify, StoreController.getPlaylists)
+router.get('/playlists', StoreController.getPlaylists)
 router.put('/playlist/:id', auth.verify, StoreController.updatePlaylist)
 
 // Song routes

@@ -158,7 +158,11 @@ function SongCatalogScreen() {
                         Search
                     </button>
                     <button 
-                        onClick={(e) => dispatchFilterList({ type: 'CLEAR' })}
+                        onClick={(e) => {
+                            dispatchFilterList({ type: 'CLEAR' });
+                            dispatchSongs({ type: 'SET_SONGS', payload: null });
+                            setSelectedSong(null);
+                        }}
                         className=""
                     >
                         Clear

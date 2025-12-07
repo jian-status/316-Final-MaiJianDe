@@ -47,6 +47,10 @@ class DatabaseManager {
     throw new Error('getPlaylistsByOwner() must be implemented by subclass');
   }
 
+  async getAllPlaylists() {
+    throw new Error('getAllPlaylists() must be implemented by subclass');
+  }
+
   async updatePlaylist(playlistId, data) {
     throw new Error('updatePlaylist() must be implemented by subclass');
   }

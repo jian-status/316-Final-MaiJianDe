@@ -416,6 +416,21 @@ class PostgresManager extends DatabaseManager {
       throw err;
     }
   }
-}
 
+  async getAllPlaylists() {
+    try {
+      const playlists = await Playlist.findAll({
+        include: [{
+          model: Song,
+          as: 'songs'
+        }]
+      });
+      playlists.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+      return playlists;
+    } catch (err) {
+      console.error('Could not get all playlists:', err.message);
+      throw err;
+    }
+  }
+  }
 module.exports = PostgresManager;

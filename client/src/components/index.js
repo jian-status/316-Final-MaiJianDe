@@ -10,6 +10,7 @@ import MUIErrorModal from './MUIErrorModal'
 //import MUIRemoveSongModal from './MUIRemoveSongModal'
 import RegisterScreen from './RegisterScreen'
 import SongCard from './SongCard'
+import PlaylistCatalogScreen from './PlaylistCatalogScreen'
 import SplashScreen from './SplashScreen'
 import Statusbar from './Statusbar'
 import WorkspaceScreen from './WorkspaceScreen'
@@ -37,4 +38,5 @@ export {
     Statusbar, 
     WorkspaceScreen,
     SongCatalogScreen,
+    PlaylistCatalogScreen,
 }
