@@ -28,11 +28,9 @@ export default function LoginScreen() {
     };
 
     let modalJSX = "";
-    console.log(auth);
     if (auth.errorMessage !== null){
         modalJSX = <MUIErrorModal />;
     }
-    console.log(modalJSX);
 
     return (
         <Grid container component="main" sx={{ height: '100vh' }}>

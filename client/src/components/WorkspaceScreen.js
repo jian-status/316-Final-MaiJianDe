@@ -31,15 +31,18 @@ export default function WorkspaceScreen() {
             sx={{overflow: 'scroll', height: '87%', width: '100%', bgcolor: '#8000F00F'}}
         >
             {
-                store.currentList.songs.map((song, index) => (
-                    <SongCard
-                        id={'playlist-song-' + (index)}
-                        key={'playlist-song-' + (index)}
-                        index={index}
-                        song={song}
-                        isEditable={true}
-                    />
-                ))
+                store.currentList.songs.map((song, index) => {
+                    const songKey = song._id || song.id || song.youTubeId || index;
+                    return (
+                        <SongCard
+                            id={'playlist-song-' + songKey}
+                            key={'playlist-song-' + songKey}
+                            index={index}
+                            song={song}
+                            isEditable={true}
+                        />
+                    )
+                })
             }
          </List>            
          { modalJSX }

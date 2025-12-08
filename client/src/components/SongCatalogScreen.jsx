@@ -2,7 +2,6 @@ import React, { useReducer } from 'react';
 import SongCard from './SongCard';
 
 const handleSongClick = (song) => {
-    console.log('Song clicked:', song);
 }
 const filterListReducer = (state, action) => {
     switch (action.type) {
@@ -78,7 +77,7 @@ function SongCatalogScreen() {
     };
 
     const handleSearch = async () => {
-        console.log('filterList state:', filterList);
+        // filterList state
         try {
         const params = new URLSearchParams({
             title: filterList.title,
@@ -94,7 +93,7 @@ function SongCatalogScreen() {
         })
         .then(res => res.json())
         .then(data => {
-            console.log('Database results:', data);
+            // Database results received
             dispatchSongs({ type: 'SET_SONGS', payload: data.songs });
         });
 
@@ -103,12 +102,11 @@ function SongCatalogScreen() {
         }
     };
 
-    let displaySongs = (songs.data && songs.data.length !== 0) ? songs.data.map(song =>
-        <div onClick={() => handleSongClick(song)} key={song._id}>
-            <SongCard song={song}/>
+    let displaySongs = (songs.data && songs.data.length !== 0) ? songs.data.map((song, idx) =>
+        <div onClick={() => handleSongClick(song)} key={song._id || song.id || song.youTubeId || idx}>
+            <SongCard song={song} index={idx} id={song._id || song.id || song.youTubeId || idx} />
         </div>
     ) : <div>No songs found.</div>;
-    console.log(displaySongs)
     return (
         <div className="grid grid-cols-5">
             <div className="col-span-2 p-3">

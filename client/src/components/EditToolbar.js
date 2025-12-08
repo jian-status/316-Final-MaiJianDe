@@ -61,14 +61,15 @@ function EditToolbar() {
                 variant="contained">
                 {store.isNewPlaylist ? 'Complete' : 'Close'}
             </Button>
-            {!store.isNewPlaylist ? '' : <Button
-                disabled={!store.canClose()}
-                id='cancel-button'
-                onClick={handleCancel}
-                variant="contained">
-                Cancel
-            </Button>
-            }
+            {store.isNewPlaylist && (
+                <Button
+                    disabled={!store.canClose()}
+                    id='cancel-button'
+                    onClick={handleCancel}
+                    variant="contained">
+                    Cancel
+                </Button>
+            )}
         </div>
     )
 }

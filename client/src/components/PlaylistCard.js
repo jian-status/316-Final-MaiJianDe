@@ -3,6 +3,7 @@ import { GlobalStoreContext } from '../store'
 import ListItem from '@mui/material/ListItem';
 import TextField from '@mui/material/TextField';
 import { getPlaylistById } from '../store/requests/index';
+import AuthContext from '../auth';
 /*
     This is a card in our list of top 5 lists. It lets select
     a list for editing and it has controls for changing its 
@@ -15,23 +16,22 @@ function PlaylistCard(props) {
     const [editActive, setEditActive] = useState(false);
     const { idNamePair } = props;
     const [text, setText] = useState(idNamePair.name);
-    const [songs, setSongs] = useState([]);
     const [expandSongs, setExpandSongs] = useState(false);
+    const [playlist, setPlaylist] = useState(null);
+    const { auth } = useContext(AuthContext);
+    
     useEffect(() => {
         getPlaylistById(idNamePair._id)
             .then((res) => res.json())
             .then((data) => {
-                if (data && data.success && data.playlist && Array.isArray(data.playlist.songs)) {
-                    setSongs(data.playlist.songs);
-                } else if (data && data.playlist && Array.isArray(data.playlist.songs)) {
-                    setSongs(data.playlist.songs);
-                    console.warn('Playlist loaded with warning:', data.description);
+                if (data && data.success && data.playlist) {
+                    setPlaylist(data.playlist);
                 } else {
-                    setSongs([]);
+                    setPlaylist(null);
                 }
             })
             .catch((err) => {
-                setSongs([]);
+                setPlaylist(null);
                 console.log(err);
             });
     }, []);
@@ -56,24 +56,30 @@ function PlaylistCard(props) {
         store.markListForDeletion(id);
     }
 
-    function handleKeyPress(event) {
-        if (event.code === "Enter") {
-            let id = event.target.id.substring("list-".length);
-            store.changeListName(id, text);
-            toggleEdit();
-        }
-    }
     function handleUpdateText(event) {
         setText(event.target.value);
     }
+    // handled by parent (invoke props.onPlay)
+    function handleCopy(event) {
+        event.stopPropagation();
+        const toCopy = playlist ? JSON.parse(JSON.stringify(playlist)) : (store.currentList ? JSON.parse(JSON.stringify(store.currentList)) : null);
+        if (!toCopy) {
+            console.error("No playlist available to copy");
+            return;
+        }
+        store.createNewListFromCopy(idNamePair.name + ` Copy_${new Date().getTime()}`, toCopy.songs || []);
+    }
+    const isMyPlaylist = playlist && auth && auth.user && playlist.ownerEmail === auth.user.email;
+
     let cardElement =
         <ListItem
             id={idNamePair._id}
             key={idNamePair._id}
             sx={{ borderRadius: "15px", bgcolor: '#8000F00F', marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingTop: '15px' }}
             style={{ transform: "translate(1%,0%)", width: '98%' }}
+            className={`${isMyPlaylist ? 'border border-solid border-red-500' : ''}`}
         >
-            <div className="flex w-full gap-4 mb-2 items-center">
+            <div className={`flex w-full gap-4 mb-2 items-center`}>
                 <div>
                     <div id="profile" className="w-20 h-20 rounded-full bg-gray-300 flex justify-center items-center">No profile</div>
                 </div>
@@ -81,18 +87,18 @@ function PlaylistCard(props) {
                     <div className='flex items-center justify-between w-full'>
                         <div>{idNamePair.name}</div>
                         <div className='flex gap-2'>
-                            <button onClick={(event) => {
+                            {isMyPlaylist && <button onClick={(event) => {
                                 handleDeleteList(event, idNamePair._id)
                             }} aria-label='delete'>
                                 Delete
-                            </button>
-                            <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                            </button>}
+                            {isMyPlaylist && <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
                                 Edit
-                            </button>
-                            <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                            </button>}
+                            {auth && auth.loggedIn && <button onClick={handleCopy} aria-label='edit'>
                                 Copy
-                            </button>
-                            <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                            </button>}
+                            <button onClick={(e) => { e.stopPropagation(); props.onPlay && props.onPlay(idNamePair._id); }} aria-label='play'>
                                 Play
                             </button>
                         </div>
@@ -102,8 +108,8 @@ function PlaylistCard(props) {
             </div>
             <div>
                 {
-                    expandSongs && songs.map((song, index) => (
-                        <p>{index + 1}. {song.title}</p>)
+                    expandSongs && playlist && Array.isArray(playlist.songs) && playlist.songs.map((song, index) => (
+                        <p key={song._id || song.id || song.youTubeId || index}>{index + 1}. {song.title}</p>)
                     )
                 }
 
@@ -111,26 +117,10 @@ function PlaylistCard(props) {
             <button onClick={() => setExpandSongs(!expandSongs)} className="ml-auto">{expandSongs ? "Show Less" : "Show More"}</button>
         </ListItem>
 
-
-    if (editActive) {
-        cardElement =
-            <TextField
-                margin="normal"
-                required
-                fullWidth
-                id={"list-" + idNamePair._id}
-                label="Playlist Name"
-                name="name"
-                autoComplete="Playlist Name"
-                className='list-card'
-                onKeyUp={handleKeyPress}
-                onChange={handleUpdateText}
-                defaultValue={idNamePair.name}
-                autoFocus
-            />
-    }
     return (
-        cardElement
+        <>
+            {cardElement}
+        </>
     );
 }
 

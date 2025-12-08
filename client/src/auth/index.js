@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import authRequestSender from './requests'
 
 const AuthContext = createContext();
-console.log("create AuthContext: " + AuthContext);
 
 // THESE ARE ALL THE TYPES OF UPDATES TO OUR AUTH STATE THAT CAN BE PROCESSED
 export const AuthActionType = {
@@ -82,12 +81,12 @@ function AuthContextProvider(props) {
     }
 
     auth.registerUser = async function(username, email, password, passwordVerify) {
-        console.log("REGISTERING USER");
+        // registering user
         try{   
             const response = await authRequestSender.registerUser(username, email, password, passwordVerify);   
             if (response.status === 200) {
                 const data = await response.json();
-                console.log("Registered User");
+                // registered user
                 authReducer({
                     type: AuthActionType.REGISTER_USER,
                     payload: {
@@ -97,12 +96,12 @@ function AuthContextProvider(props) {
                     }
                 })
                 navigate("/login");
-                console.log("NOW WE LOGIN");
+                // now logging in
                 auth.loginUser(email, password);
-                console.log("LOGGED IN");
+                // logged in
             }
         } catch(error){
-            console.log("Registration error:", error);
+            console.error("Registration error:", error);
             authReducer({
                 type: AuthActionType.REGISTER_USER,
                 payload: {
@@ -165,7 +164,7 @@ function AuthContextProvider(props) {
                 initials += auth.user.username.charAt(1);
             }
         }
-        console.log("user initials: " + initials);
+        // user initials computed
         return initials;
     }
 

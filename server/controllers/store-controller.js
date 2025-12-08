@@ -307,6 +307,23 @@ getAllSongs = async (req, res) => {
     }
 }
 
+incrementSongListen = async (req, res) => {
+    try {
+        const { playlistId, youTubeId, title, artist, year } = req.body;
+        if (!playlistId) {
+            return res.status(400).json({ success: false, error: 'playlistId is required' });
+        }
+        if (!youTubeId && !(title && artist)) {
+            return res.status(400).json({ success: false, error: 'youTubeId or (title and artist) are required' });
+        }
+        const updatedSong = await db.incrementSongListen(playlistId, youTubeId, title, artist, year);
+        return res.status(200).json({ success: true, song: updatedSong });
+    } catch (error) {
+        console.error('incrementSongListen error:', error);
+        return res.status(400).json({ success: false, error: error.message });
+    }
+}
+
 module.exports = {
     createPlaylist,
     deletePlaylist,
@@ -317,5 +334,6 @@ module.exports = {
     updatePlaylist,
     getSongsByPlaylist,
     getSongCatalog,
-    getAllSongs
+    getAllSongs,
+    incrementSongListen
 }

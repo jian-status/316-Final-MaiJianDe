@@ -23,7 +23,7 @@ getLoggedIn = async (req, res) => {
             }
         })
     } catch (err) {
-        console.log("err:", err);
+        console.error("getLoggedIn error:", err);
         res.json(false);
     }
 }
@@ -39,7 +39,6 @@ loginUser = async (req, res) => {
         }
 
         const existingUser = await db.getUserByEmail(email);
-        console.log("existingUser: " + existingUser);
         if (!existingUser) {
             return res
                 .status(401)
@@ -51,7 +50,6 @@ loginUser = async (req, res) => {
         console.log("provided password: " + password);
         const passwordCorrect = await bcrypt.compare(password, existingUser.passwordHash);
         if (!passwordCorrect) {
-            console.log("Incorrect password");
             return res
                 .status(401)
                 .json({
@@ -76,7 +74,7 @@ loginUser = async (req, res) => {
         })
 
     } catch (err) {
-        console.error(err);
+        console.error("loginUser error:", err);
         res.status(500).send();
     }
 }

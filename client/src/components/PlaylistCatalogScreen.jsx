@@ -6,37 +6,30 @@ import { GlobalStoreContext } from '../store'
 import WorkspaceScreen from './WorkspaceScreen';
 import PlaylistCard from './PlaylistCard';
 import MUIDeleteModal from './MUIDeleteModal';
+import PlayModal from './PlayModal.js';
 
 const filterListReducer = (state, action) => {
-    let filtered = state.allPlaylists || [];
     switch (action.type) {
         case 'SET_ALL_PLAYLISTS':
-            filtered = action.payload;
-            return { ...state, allPlaylists: action.payload, result: filtered };
+            return { ...state, allPlaylists: action.payload };
         case 'FILTER_BY_PLAYLIST_NAME':
-            filtered = filtered.filter(p => (p.name || "").toLowerCase().startsWith(action.payload.toLowerCase()));
-            return { ...state, playlistName: action.payload, result: filtered };
+            return { ...state, playlistName: action.payload };
         case 'FILTER_BY_OWNER':
-            filtered = filtered.filter(p => (p.username || p.ownerEmail || "").toLowerCase().startsWith(action.payload.toLowerCase()));
-            return { ...state, owner: action.payload, result: filtered };
+            return { ...state, owner: action.payload };
         case 'FILTER_BY_SONG_TITLE':
-            filtered = filtered.filter(p => (p.songs || []).some(song => (song.title || "").toLowerCase().startsWith(action.payload.toLowerCase())));
-            return { ...state, songTitle: action.payload, result: filtered };
+            return { ...state, songTitle: action.payload };
         case 'FILTER_BY_SONG_ARTIST':
-            filtered = filtered.filter(p => (p.songs || []).some(song => (song.artist || "").toLowerCase().startsWith(action.payload.toLowerCase())));
-            return { ...state, songArtist: action.payload, result: filtered };
+            return { ...state, songArtist: action.payload };
         case 'FILTER_BY_SONG_YEAR':
-            filtered = filtered.filter(p => (p.songs || []).some(song => String(song.year || "").startsWith(action.payload)));
-            return { ...state, songYear: action.payload, result: filtered };
+            return { ...state, songYear: action.payload };
         case 'CLEAR':
-            return { ...state, playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '', result: state.allPlaylists || [] };
+            return { ...state, playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '' };
         default:
             return state;
     }
 };
 const computeTotalListens = (playlist) => {}
 const handlePlaylistClick = (playlist) => {
-    console.log("Clicked playlist: ", playlist);
 }
 const sortPlaylistsReducer = (state, action) => {
     let source = action.payload || state.data || [];
@@ -61,6 +54,8 @@ const sortPlaylistsReducer = (state, action) => {
 }
 
 function PlaylistCatalogScreen() {
+    const [showPlayModal, setShowPlayModal] = React.useState(false);
+    const [pendingPlayId, setPendingPlayId] = React.useState(null);
     const [filterList, dispatchFilterList] = useReducer(filterListReducer, { playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '', allPlaylists: [], result: [] });
     const [playlists, dispatchPlaylists] = useReducer(sortPlaylistsReducer, { data: null, sortBy: 'SORT_BY_playlistNameAZ' });
     const { auth } = useContext(AuthContext);
@@ -111,23 +106,33 @@ function PlaylistCatalogScreen() {
             .then(async data => {
                 if (data.success) {
                     dispatchFilterList({ type: 'SET_ALL_PLAYLISTS', payload: data.data });
+                    dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: data.data });
                 } else {
                     dispatchFilterList({ type: 'SET_ALL_PLAYLISTS', payload: [] });
+                    dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: [] });
                 }
             })
             .catch(err => { console.error('Error loading playlists: ', err) });
     }, [auth.isAuthReady, auth.loggedIn, auth.user, store.currentList, store.idNamePairs]);
 
+    // If a playlist was requested for Play and the store's currentList becomes that playlist, open modal
     useEffect(() => {
-        if (filterList.result) {
-            dispatchPlaylists({ type: playlists.sortBy, payload: filterList.result });
+        if (pendingPlayId && store.currentList && store.currentList._id === pendingPlayId) {
+            setShowPlayModal(true);
+            setPendingPlayId(null);
         }
-    }, [filterList.result, playlists.sortBy]);
+    }, [pendingPlayId, store.currentList]);
+
+    // Removed useEffect that auto-filters playlists on input change
 
     let displayPlaylists = (playlists.data && playlists.data.length !== 0)
         ? playlists.data.map(playlist => (
-            <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
-                <PlaylistCard key={playlist._id} idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.username }} />
+            <div key={playlist._id}>
+                <PlaylistCard
+                    key={playlist._id}
+                    idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.username }}
+                    onPlay={(id) => { setPendingPlayId(id); store.loadPlaylistForModal(id); }}
+                />
             </div>
         ))
         : <div>No playlists found.</div>;
@@ -214,6 +219,8 @@ function PlaylistCatalogScreen() {
                 </button>
             </div>
             <MUIDeleteModal />
+            {showPlayModal && <PlayModal onClose={() => { setShowPlayModal(false); store.clearCurrentList(); setPendingPlayId(null); }} />}
+
         </div>
     );
 }

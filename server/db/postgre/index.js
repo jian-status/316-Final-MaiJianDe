@@ -428,5 +428,26 @@ class PostgresManager extends DatabaseManager {
       throw err;
     }
   }
+
+    async incrementSongListen(playlistId, youTubeId, title, artist, year) {
+      try {
+        let whereClause = { playlistId: playlistId };
+        if (youTubeId) {
+          whereClause.youTubeId = youTubeId;
+        } else if (title && artist) {
+          whereClause.title = title;
+          whereClause.artist = artist;
+          if (year) whereClause.year = year;
+        }
+        const song = await Song.findOne({ where: whereClause });
+        if (!song) throw new Error('Could not find song');
+        song.listens = (song.listens || 0) + 1;
+        await song.save();
+        return song;
+      } catch (err) {
+        console.error('Could not increment listens for song:', err.message);
+        throw err;
+      }
+    }
   }
 module.exports = PostgresManager;

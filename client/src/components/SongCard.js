@@ -1,10 +1,12 @@
 import { useContext } from 'react'
 import { GlobalStoreContext } from '../store'
+import AuthContext from '../auth';
 import Button from '@mui/material/Button';
 
 function SongCard(props) {
     const { store } = useContext(GlobalStoreContext);
-    const { song, index, isEditable = false } = props;
+    const { auth } = useContext(AuthContext);
+    const { song, index, isEditable = false, id: propId } = props;
 
     function handleDragStart(event) {
         event.dataTransfer.setData("song", index);
@@ -31,6 +33,11 @@ function SongCard(props) {
         store.addMoveSongTransaction(sourceIndex, targetIndex);
     }
     function handleRemoveSong(event) {
+        event.stopPropagation();
+        if (!auth || !auth.loggedIn) {
+            console.error("Must be logged in to remove a song.");
+            return;
+        }
         store.addRemoveSongTransaction(song, index);
     }
     function handleClick(event) {
@@ -45,8 +52,8 @@ function SongCard(props) {
     let cardClass = "list-card unselected-list-card";
     return (
         <div
-            key={index}
-            id={'song-' + index + '-card'}
+            key={propId || (song._id || song.id || song.youTubeId || index)}
+            id={propId || ('song-' + (song._id || song.id || song.youTubeId || index) + '-card')}
             className={cardClass}
             onDragStart={isEditable ? handleDragStart : null}
             onDragOver={isEditable ? handleDragOver: null}
@@ -56,14 +63,14 @@ function SongCard(props) {
             draggable={isEditable}
             onClick={isEditable ? handleClick : null}
         >
-            {isEditable ? '' : index + 1}
+            {isEditable ? '' : index + 1 + '. '}
             <a
-                id={'song-' + index + '-link'}
+                id={propId ? `${propId}-link` : 'song-' + (song._id || song.id || song.youTubeId || index) + '-link'}
                 className="song-link"
                 href={"https://www.youtube.com/watch?v=" + song.youTubeId}>
                 {song.title} ({song.year}) by {song.artist}
             </a>
-            {isEditable || (
+            {auth && auth.loggedIn && isEditable && (
             <Button
                 sx={{transform:"translate(-5%, -5%)", width:"5px", height:"30px"}}
                 variant="contained"
