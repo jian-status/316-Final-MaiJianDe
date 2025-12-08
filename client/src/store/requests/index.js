@@ -42,6 +42,8 @@ export const updatePlaylistById = (id, playlist) => {
 
 export const getPlaylists = () => fetch(`http://localhost:4000/store/playlists`, { method: 'GET', credentials: 'include' })
 
+export const getLoggedInPlaylists = () => fetch(`http://localhost:4000/store/playlists/user`, { method: 'GET', credentials: 'include' })
+
 export const getFilteredSongs = (title, artist, year) => {
     return fetch(`http://localhost:4000/store/songs/search`, {
         method: 'POST',
@@ -57,6 +59,7 @@ const apis = {
     getPlaylistById,
     getPlaylistPairs,
     getPlaylists,
+    getLoggedInPlaylists,
     updatePlaylistById,
     getFilteredSongs
 }

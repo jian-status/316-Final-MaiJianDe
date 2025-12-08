@@ -380,6 +380,7 @@ function GlobalStoreContextProvider(props) {
                         type: GlobalStoreActionType.LOAD_ID_NAME_PAIRS,
                         payload: pairsArray,
                     });
+                    window.location.reload();
                 }
                 else {
                     console.log("FAILED TO GET THE LIST PAIRS");
@@ -416,8 +417,7 @@ function GlobalStoreContextProvider(props) {
         async function processDelete(id) {
             let response = await storeRequestSender.deletePlaylistById(id);
             if (response.status === 200) {
-                store.loadIdNamePairs();
-                navigate("/");
+                store.loadIdNamePairs();                
             }
         }
         processDelete(id);
@@ -425,7 +425,7 @@ function GlobalStoreContextProvider(props) {
     store.deleteMarkedList = function() {
         store.deleteList(store.listIdMarkedForDeletion);
         store.hideModals();
-        
+        window.location.reload();
     }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
     // TO SEE IF THEY REALLY WANT TO DELETE THE LIST
@@ -474,6 +474,7 @@ function GlobalStoreContextProvider(props) {
                                     type: GlobalStoreActionType.SET_CURRENT_LIST,
                                     payload: playlist
                                 });
+                                setStore(prev => ({ ...prev, isEditingPlaylist: true }));
                             } else {
                                 console.error("Failed to update playlist:", data);
                             }

@@ -117,15 +117,14 @@ getPlaylistById = async (req, res) => {
         // Check if this playlist belongs to this user
         const user = await db.getUserByEmail(playlist.ownerEmail);
         if (!user) {
-            return res.status(400).json({
+            return res.status(200).json({
+                playlist: playlist,
                 success: false,
                 description: 'getPlaylistById: Could not find user'
             });
         }
-        
         console.log("getPlaylistById, user._id: " + user._id);
         console.log("getPlaylistById, req.userId: " + req.userId);
-        
         if (user._id.toString() == req.userId) {
             console.log("getPlaylistById, correct user!");
             return res.status(200).json({ success: true, playlist: playlist });
@@ -193,22 +192,31 @@ getPlaylistPairs = async (req, res) => {
 }
 getPlaylists = async (req, res) => {
     try {
+        const playlists = await db.getAllPlaylists();
+        return res.status(200).json({ success: true, data: playlists || [] });
+    } catch (error) {
+        console.error("getPlaylists: Could not get playlists:", error);
+        return res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+getLoggedInPlaylists = async (req, res) => {
+    try {
         const userId = auth.verifyUser(req);
         if (userId) {
             const user = await db.getUser(userId);
             if (user) {
                 const playlists = await db.getPlaylistsByOwner(user.email);
                 return res.status(200).json({ success: true, data: playlists || [] });
-            } else {
-                const playlists = await db.getAllPlaylists();
-                return res.status(200).json({ success: true, data: playlists || [] });
             }
-        } else {
-            const playlists = await db.getAllPlaylists();
-            return res.status(200).json({ success: true, data: playlists || [] });
         }
+        // If not logged in or user not found, return empty array
+        return res.status(200).json({ success: true, data: [] });
     } catch (error) {
-        console.error("getPlaylists: Could not get playlists:", error);
+        console.error("getLoggedInPlaylists: Could not get playlists:", error);
         return res.status(400).json({
             success: false,
             error: error.message
@@ -336,6 +344,7 @@ module.exports = {
     getPlaylistById,
     getPlaylistPairs,
     getPlaylists,
+    getLoggedInPlaylists,
     updatePlaylist,
     getSongsByPlaylist,
     getSongCatalog,

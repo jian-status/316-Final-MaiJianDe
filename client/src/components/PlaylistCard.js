@@ -1,9 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
 import { GlobalStoreContext } from '../store'
-import Box from '@mui/material/Box';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import IconButton from '@mui/material/IconButton';
 import ListItem from '@mui/material/ListItem';
 import TextField from '@mui/material/TextField';
 import { getPlaylistById } from '../store/requests/index';
@@ -20,13 +16,24 @@ function PlaylistCard(props) {
     const { idNamePair } = props;
     const [text, setText] = useState(idNamePair.name);
     const [songs, setSongs] = useState([]);
+    const [expandSongs, setExpandSongs] = useState(false);
     useEffect(() => {
         getPlaylistById(idNamePair._id)
-        .then((res) => res.json())
-        .then((data) => {
-            setSongs(data.playlist.songs);
-        })
-        .catch((err) => console.log(err));
+            .then((res) => res.json())
+            .then((data) => {
+                if (data && data.success && data.playlist && Array.isArray(data.playlist.songs)) {
+                    setSongs(data.playlist.songs);
+                } else if (data && data.playlist && Array.isArray(data.playlist.songs)) {
+                    setSongs(data.playlist.songs);
+                    console.warn('Playlist loaded with warning:', data.description);
+                } else {
+                    setSongs([]);
+                }
+            })
+            .catch((err) => {
+                setSongs([]);
+                console.log(err);
+            });
     }, []);
     function handleLoadList(event, id) {
         console.log("handleLoadList for " + id);
@@ -72,39 +79,51 @@ function PlaylistCard(props) {
     function handleUpdateText(event) {
         setText(event.target.value);
     }
-    console.log(songs)
     let cardElement =
         <ListItem
             id={idNamePair._id}
             key={idNamePair._id}
-            sx={{borderRadius:"15px", bgcolor: '#8000F00F', marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}
-            style={{transform:"translate(1%,0%)", width: '98%'}}
-            button
+            sx={{ borderRadius: "15px", bgcolor: '#8000F00F', marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingTop: '15px' }}
+            style={{ transform: "translate(1%,0%)", width: '98%' }}
         >
-            <div className='flex items-center justify-between w-full'>
-                <Box sx={{ p: 1, width: '100%' }}>{idNamePair.name}</Box>
-                <div className='flex'>
-                    <Box sx={{ p: 1 }}>
-                        <IconButton onClick={handleToggleEdit} aria-label='edit'>
-                            <EditIcon />
-                        </IconButton>
-                    </Box>
-                    <Box sx={{ p: 1 }}>
-                        <IconButton onClick={(event) => {
+            <div className="flex w-full gap-4 mb-2 items-center">
+                <div>
+                    <div id="profile" className="w-20 h-20 rounded-full bg-gray-300 flex justify-center items-center">No profile</div>
+                </div>
+                <div className="flex flex-col w-full">
+                    <div className='flex items-center justify-between w-full'>
+                        <div>{idNamePair.name}</div>
+                        <div className='flex gap-2'>
+                            <button onClick={(event) => {
                                 handleDeleteList(event, idNamePair._id)
                             }} aria-label='delete'>
-                            <DeleteIcon />
-                        </IconButton>
-                    </Box>
+                                Delete
+                            </button>
+                            <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                                Edit
+                            </button>
+                            <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                                Copy
+                            </button>
+                            <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                                Play
+                            </button>
+                        </div>
+                    </div>
+                    <div>{idNamePair.username || 'No username'}</div>
                 </div>
             </div>
             <div>
-                {songs.map((song, index) => (
-                    <p>{index + 1}. {song.title}</p>
-                ))}
+                {
+                    expandSongs && songs.map((song, index) => (
+                        <p>{index + 1}. {song.title}</p>)
+                    )
+                }
+
             </div>
+            <button onClick={() => setExpandSongs(!expandSongs)} className="ml-auto">{expandSongs ? "Show Less" : "Show More"}</button>
         </ListItem>
-        
+
 
     if (editActive) {
         cardElement =

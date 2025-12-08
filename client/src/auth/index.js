@@ -17,7 +17,8 @@ function AuthContextProvider(props) {
     const [auth, setAuth] = useState({
         user: null,
         loggedIn: false,
-        errorMessage: null
+        errorMessage: null,
+        isAuthReady: false
     });
     const navigate = useNavigate();
 
@@ -33,28 +34,32 @@ function AuthContextProvider(props) {
                 return setAuth({
                     user: payload.user,
                     loggedIn: payload.loggedIn,
-                    errorMessage: null
+                    errorMessage: null,
+                    isAuthReady: true
                 });
             }
             case AuthActionType.LOGIN_USER: {
                 return setAuth({
                     user: payload.user,
                     loggedIn: payload.loggedIn,
-                    errorMessage: payload.errorMessage
+                    errorMessage: payload.errorMessage,
+                    isAuthReady: true
                 })
             }
             case AuthActionType.LOGOUT_USER: {
                 return setAuth({
                     user: null,
                     loggedIn: false,
-                    errorMessage: null
+                    errorMessage: null,
+                    isAuthReady: true
                 })
             }
             case AuthActionType.REGISTER_USER: {
                 return setAuth({
                     user: payload.user,
                     loggedIn: payload.loggedIn,
-                    errorMessage: payload.errorMessage
+                    errorMessage: payload.errorMessage,
+                    isAuthReady: true
                 })
             }
             default:

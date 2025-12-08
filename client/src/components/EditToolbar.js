@@ -29,6 +29,7 @@ function EditToolbar() {
         store.setIsEditingPlaylist(false);
     }
     function handleSave() {
+        window.location.reload();
         store.closeCurrentList();
     }
     return (

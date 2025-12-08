@@ -1,10 +1,11 @@
-import React, { useReducer, useContext, useEffect } from 'react';
+import React, { useReducer, useContext, useEffect, useRef } from 'react';
 import SongCard from './SongCard';
 import AuthContext from '../auth';
 import storeRequestSender from '../store/requests';
 import { GlobalStoreContext } from '../store'
 import WorkspaceScreen from './WorkspaceScreen';
 import PlaylistCard from './PlaylistCard';
+import MUIDeleteModal from './MUIDeleteModal';
 
 const filterListReducer = (state, action) => {
     switch (action.type) {
@@ -30,19 +31,20 @@ const handlePlaylistClick = (playlist) => {
 }
 const sortPlaylistsReducer = (state, action) => {
     switch (action.type) {
-        case 'SORT_BY_uniqueListenersHiLo':
-            return {...state, data: action.payload.toSorted((a, b) => computeTotalListens(b) - computeTotalListens(a))};
-        case 'SORT_BY_uniqueListenersLoHi':
-            return {...state, data: action.payload.toSorted((a, b) => computeTotalListens(a) - computeTotalListens(b))};
         case 'SET_PLAYLISTS':
+            return { ...state, data: action.payload };
+        case 'SORT_BY_uniqueListenersHiLo':
+            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => computeTotalListens(b) - computeTotalListens(a)) : [], sortBy: action.type };
+        case 'SORT_BY_uniqueListenersLoHi':
+            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => computeTotalListens(a) - computeTotalListens(b)) : [], sortBy: action.type };
         case 'SORT_BY_playlistNameAZ':
-            return {...state, data: action.payload.toSorted((a, b) => (a.name || '').localeCompare(b.name || ''))};
+            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (a.name || '').localeCompare(b.name || '')) : [], sortBy: action.type };
         case 'SORT_BY_playlistNameZA':
-            return {...state, data: action.payload.toSorted((a, b) => (b.name || '').localeCompare(a.name || ''))};
+            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (b.name || '').localeCompare(a.name || '')) : [], sortBy: action.type };
         case 'SORT_BY_ownerNameAZ':
-            return {...state, data: action.payload.toSorted((a, b) => (a.ownerEmail || '').localeCompare(b.ownerEmail || ''))};
+            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (a.ownerEmail || '').localeCompare(b.ownerEmail || '')) : [], sortBy: action.type };
         case 'SORT_BY_ownerNameZA':
-            return {...state, data: action.payload.toSorted((a, b) => (b.ownerEmail || '').localeCompare(a.ownerEmail || ''))};
+            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (b.ownerEmail || '').localeCompare(a.ownerEmail || '')) : [], sortBy: action.type };
         default:
             return state;
     }
@@ -61,7 +63,23 @@ function PlaylistCatalogScreen() {
             const response = await storeRequestSender.getPlaylists();
             const data = await response.json();
             if (data.success) {
-                dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: data.data });
+                let filtered = data.data;
+                if (filterList.playlistName) {
+                    filtered = filtered.filter(p => (p.name || "").toLowerCase().includes(filterList.playlistName.toLowerCase()));
+                }
+                if (filterList.owner) {
+                    filtered = filtered.filter(p => (p.username || p.ownerEmail || "").toLowerCase().includes(filterList.owner.toLowerCase()));
+                }
+                if (filterList.songTitle) {
+                    filtered = filtered.filter(p => (p.songs || []).some(song => (song.title || "").toLowerCase().includes(filterList.songTitle.toLowerCase())));
+                }
+                if (filterList.songArtist) {
+                    filtered = filtered.filter(p => (p.songs || []).some(song => (song.artist || "").toLowerCase().includes(filterList.songArtist.toLowerCase())));
+                }
+                if (filterList.songYear) {
+                    filtered = filtered.filter(p => (p.songs || []).some(song => String(song.year || "").includes(filterList.songYear)));
+                }
+                dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: filtered });
             } else {
                 console.error('Failed to get playlists', data);
             }
@@ -71,15 +89,37 @@ function PlaylistCatalogScreen() {
     }
 
     useEffect(() => {
-        if (auth.loggedIn) {
-            console.log("User is logged in, loading playlists");
+        // Wait until auth check is complete before loading playlists
+        if (!auth.isAuthReady) return;
+        
+        if (auth.loggedIn && auth.user) {
+            storeRequestSender.getLoggedInPlaylists()
+                .then(async res => res.json())
+                .then(async data => {
+                    if (data.success) {
+                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: data.data });
+                    } else {
+                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: [] });
+                    }
+                })
+                .catch(err => { console.error('Error loading user playlists: ', err) });
+        } else {
+            storeRequestSender.getPlaylists()
+                .then(async res => res.json())
+                .then(async data => {
+                    if (data.success) {
+                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: data.data });
+                    } else {
+                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: [] });
+                    }
+                })
+                .catch(err => { console.error('Error loading playlists: ', err) });
         }
-        handleSearch();
-    }, [store.currentList]);
+    }, [auth.isAuthReady, auth.loggedIn, auth.user]);
 
     let displayPlaylists = (playlists.data && playlists.data.length !== 0) ? playlists.data.map(playlist => (
         <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
-            <PlaylistCard key={playlist._id} idNamePair={{ _id: playlist._id, name: playlist.name }} />
+            <PlaylistCard key={playlist._id} idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.username }} />
         </div>
     )) : <div>No playlists found.</div>;
 
@@ -142,7 +182,7 @@ function PlaylistCatalogScreen() {
                         <div className="flex justify-between items-center">
                             <div className="flex gap-2 items-center">
                                 <span>Sort by:</span>
-                                <select id="sortBy" value={playlists.sortBy} onChange={(e) => dispatchPlaylists({ payload: playlists.data, type: e.target.value })}>
+                                <select id="sortBy" value={playlists.sortBy} onChange={(e) => dispatchPlaylists({ type: e.target.value })}>
                                     <option value="SORT_BY_uniqueListenersHiLo">Unique Listeners Hi Lo</option>
                                     <option value="SORT_BY_uniqueListenersLoHi">Unique Listeners Lo Hi</option>
                                     <option value="SORT_BY_playlistNameAZ">Playlist Name (A-Z)</option>
@@ -164,6 +204,7 @@ function PlaylistCatalogScreen() {
                     New Playlist
                 </button>
             </div>
+            <MUIDeleteModal />
         </div>
     );
 }
