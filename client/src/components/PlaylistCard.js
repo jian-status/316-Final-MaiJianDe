@@ -49,19 +49,6 @@ function PlaylistCard(props) {
         }
     }
 
-    function handleToggleEdit(event) {
-        event.stopPropagation();
-        toggleEdit();
-    }
-
-    function toggleEdit() {
-        let newActive = !editActive;
-        if (newActive) {
-            store.setIsListNameEditActive();
-        }
-        setEditActive(newActive);
-    }
-
     async function handleDeleteList(event, id) {
         event.stopPropagation();
         //let _id = event.target.id;

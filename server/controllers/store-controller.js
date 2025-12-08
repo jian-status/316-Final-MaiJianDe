@@ -95,12 +95,6 @@ deletePlaylist = async (req, res) => {
     }
 }
 getPlaylistById = async (req, res) => {
-    if(auth.verifyUser(req) === null){
-        return res.status(400).json({
-            errorMessage: 'Could not authorize'
-        })
-    }
-    
     try {
         console.log("Find Playlist with id:", JSON.stringify(req.params.id));
 
@@ -111,33 +105,8 @@ getPlaylistById = async (req, res) => {
                 error: 'getPlaylistById, Could not find playlist' 
             });
         }
-        
         console.log("Found list: " + JSON.stringify(playlist));
-
-        // Check if this playlist belongs to this user
-        const user = await db.getUserByEmail(playlist.ownerEmail);
-        if (!user) {
-            return res.status(200).json({
-                playlist: playlist,
-                success: false,
-                description: 'getPlaylistById: Could not find user'
-            });
-        }
-        console.log("getPlaylistById, user._id: " + user._id);
-        console.log("getPlaylistById, req.userId: " + req.userId);
-        if (user._id.toString() == req.userId) {
-            console.log("getPlaylistById, correct user!");
-            return res.status(200).json({ success: true, playlist: playlist });
-        }
-        else {
-            console.log("incorrect user!");
-            return res.status(400).json({ 
-                success: false, 
-                description: "authentication error" 
-            });
-        }
-        
-        
+        return res.status(200).json({ success: true, playlist: playlist });
     } catch (error) {
         console.error("getPlaylistById: Could not get playlist:", error);
         return res.status(400).json({ 

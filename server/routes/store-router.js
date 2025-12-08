@@ -12,7 +12,7 @@ const auth = require('../auth')
 // Playlist routes
 router.post('/playlist', auth.verify, StoreController.createPlaylist)
 router.delete('/playlist/:id', auth.verify, StoreController.deletePlaylist)
-router.get('/playlist/:id', auth.verify, StoreController.getPlaylistById)
+router.get('/playlist/:id', StoreController.getPlaylistById)
 router.get('/playlistpairs', auth.verify, StoreController.getPlaylistPairs)
 router.get('/playlists', StoreController.getPlaylists)
 router.get('/playlists/user', auth.verify, StoreController.getLoggedInPlaylists)

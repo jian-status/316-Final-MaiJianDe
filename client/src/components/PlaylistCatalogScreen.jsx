@@ -8,19 +8,28 @@ import PlaylistCard from './PlaylistCard';
 import MUIDeleteModal from './MUIDeleteModal';
 
 const filterListReducer = (state, action) => {
+    let filtered = state.allPlaylists || [];
     switch (action.type) {
+        case 'SET_ALL_PLAYLISTS':
+            filtered = action.payload;
+            return { ...state, allPlaylists: action.payload, result: filtered };
         case 'FILTER_BY_PLAYLIST_NAME':
-            return { ...state, playlistName: action.payload };
+            filtered = filtered.filter(p => (p.name || "").toLowerCase().startsWith(action.payload.toLowerCase()));
+            return { ...state, playlistName: action.payload, result: filtered };
         case 'FILTER_BY_OWNER':
-            return { ...state, owner: action.payload };
+            filtered = filtered.filter(p => (p.username || p.ownerEmail || "").toLowerCase().startsWith(action.payload.toLowerCase()));
+            return { ...state, owner: action.payload, result: filtered };
         case 'FILTER_BY_SONG_TITLE':
-            return { ...state, songTitle: action.payload };
+            filtered = filtered.filter(p => (p.songs || []).some(song => (song.title || "").toLowerCase().startsWith(action.payload.toLowerCase())));
+            return { ...state, songTitle: action.payload, result: filtered };
         case 'FILTER_BY_SONG_ARTIST':
-            return { ...state, songArtist: action.payload };
+            filtered = filtered.filter(p => (p.songs || []).some(song => (song.artist || "").toLowerCase().startsWith(action.payload.toLowerCase())));
+            return { ...state, songArtist: action.payload, result: filtered };
         case 'FILTER_BY_SONG_YEAR':
-            return { ...state, songYear: action.payload };
+            filtered = filtered.filter(p => (p.songs || []).some(song => String(song.year || "").startsWith(action.payload)));
+            return { ...state, songYear: action.payload, result: filtered };
         case 'CLEAR':
-            return { ...state, playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '' };
+            return { ...state, playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '', result: state.allPlaylists || [] };
         default:
             return state;
     }
@@ -30,28 +39,29 @@ const handlePlaylistClick = (playlist) => {
     console.log("Clicked playlist: ", playlist);
 }
 const sortPlaylistsReducer = (state, action) => {
+    let source = action.payload || state.data || [];
     switch (action.type) {
-        case 'SET_PLAYLISTS':
-            return { ...state, data: action.payload };
         case 'SORT_BY_uniqueListenersHiLo':
-            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => computeTotalListens(b) - computeTotalListens(a)) : [], sortBy: action.type };
+            return { ...state, data: [...source].toSorted((a, b) => computeTotalListens(b) - computeTotalListens(a)), sortBy: action.type };
         case 'SORT_BY_uniqueListenersLoHi':
-            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => computeTotalListens(a) - computeTotalListens(b)) : [], sortBy: action.type };
+            return { ...state, data: [...source].toSorted((a, b) => computeTotalListens(a) - computeTotalListens(b)), sortBy: action.type };
+        case 'SET_PLAYLISTS':
+            return { ...state, data: [...(action.payload || [])], sortBy: state.sortBy };
         case 'SORT_BY_playlistNameAZ':
-            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (a.name || '').localeCompare(b.name || '')) : [], sortBy: action.type };
+            return { ...state, data: [...source].toSorted((a, b) => (a.name || '').localeCompare(b.name || '')), sortBy: action.type };
         case 'SORT_BY_playlistNameZA':
-            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (b.name || '').localeCompare(a.name || '')) : [], sortBy: action.type };
+            return { ...state, data: [...source].toSorted((a, b) => (b.name || '').localeCompare(a.name || '')), sortBy: action.type };
         case 'SORT_BY_ownerNameAZ':
-            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (a.ownerEmail || '').localeCompare(b.ownerEmail || '')) : [], sortBy: action.type };
+            return { ...state, data: [...source].toSorted((a, b) => (a.ownerEmail || '').localeCompare(b.ownerEmail || '')), sortBy: action.type };
         case 'SORT_BY_ownerNameZA':
-            return { ...state, data: state.data ? [...state.data].toSorted((a, b) => (b.ownerEmail || '').localeCompare(a.ownerEmail || '')) : [], sortBy: action.type };
+            return { ...state, data: [...source].toSorted((a, b) => (b.ownerEmail || '').localeCompare(a.ownerEmail || '')), sortBy: action.type };
         default:
             return state;
     }
 }
 
 function PlaylistCatalogScreen() {
-    const [filterList, dispatchFilterList] = useReducer(filterListReducer, { playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '' });
+    const [filterList, dispatchFilterList] = useReducer(filterListReducer, { playlistName: '', owner: '', songTitle: '', songArtist: '', songYear: '', allPlaylists: [], result: [] });
     const [playlists, dispatchPlaylists] = useReducer(sortPlaylistsReducer, { data: null, sortBy: 'SORT_BY_playlistNameAZ' });
     const { auth } = useContext(AuthContext);
     const { store } = useContext(GlobalStoreContext);
@@ -89,39 +99,38 @@ function PlaylistCatalogScreen() {
     }
 
     useEffect(() => {
-        // Wait until auth check is complete before loading playlists
         if (!auth.isAuthReady) return;
-        
+        let playlists;
         if (auth.loggedIn && auth.user) {
-            storeRequestSender.getLoggedInPlaylists()
-                .then(async res => res.json())
-                .then(async data => {
-                    if (data.success) {
-                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: data.data });
-                    } else {
-                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: [] });
-                    }
-                })
-                .catch(err => { console.error('Error loading user playlists: ', err) });
+            playlists = storeRequestSender.getLoggedInPlaylists();
         } else {
-            storeRequestSender.getPlaylists()
-                .then(async res => res.json())
-                .then(async data => {
-                    if (data.success) {
-                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: data.data });
-                    } else {
-                        dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: [] });
-                    }
-                })
-                .catch(err => { console.error('Error loading playlists: ', err) });
+            playlists = storeRequestSender.getPlaylists();
         }
-    }, [auth.isAuthReady, auth.loggedIn, auth.user]);
+        playlists
+            .then(async res => res.json())
+            .then(async data => {
+                if (data.success) {
+                    dispatchFilterList({ type: 'SET_ALL_PLAYLISTS', payload: data.data });
+                } else {
+                    dispatchFilterList({ type: 'SET_ALL_PLAYLISTS', payload: [] });
+                }
+            })
+            .catch(err => { console.error('Error loading playlists: ', err) });
+    }, [auth.isAuthReady, auth.loggedIn, auth.user, store.currentList, store.idNamePairs]);
 
-    let displayPlaylists = (playlists.data && playlists.data.length !== 0) ? playlists.data.map(playlist => (
-        <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
-            <PlaylistCard key={playlist._id} idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.username }} />
-        </div>
-    )) : <div>No playlists found.</div>;
+    useEffect(() => {
+        if (filterList.result) {
+            dispatchPlaylists({ type: playlists.sortBy, payload: filterList.result });
+        }
+    }, [filterList.result, playlists.sortBy]);
+
+    let displayPlaylists = (playlists.data && playlists.data.length !== 0)
+        ? playlists.data.map(playlist => (
+            <div onClick={() => handlePlaylistClick(playlist)} key={playlist._id}>
+                <PlaylistCard key={playlist._id} idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.username }} />
+            </div>
+        ))
+        : <div>No playlists found.</div>;
 
     return (
         (store.isEditingPlaylist && store.currentList) ? <WorkspaceScreen /> :
