@@ -20,24 +20,24 @@ function PlaylistCard(props) {
     const [playlist, setPlaylist] = useState(null);
     const { auth } = useContext(AuthContext);
     
-    const fetchPlaylist = () => {
-        getPlaylistById(idNamePair._id)
-            .then((res) => res.json())
-            .then((data) => {
-                if (data && data.success && data.playlist) {
-                    setPlaylist(data.playlist);
-                } else {
-                    setPlaylist(null);
-                }
-            })
-            .catch((err) => {
+    const fetchPlaylist = async () => {
+        try {
+            const res = await getPlaylistById(idNamePair._id);
+            const data = await res.json();
+            
+            if (data?.success && data?.playlist) {
+                setPlaylist(data.playlist);
+            } else {
                 setPlaylist(null);
-            });
+            }
+        } catch (err) {
+            setPlaylist(null);
+        }
     };
+
     
     useEffect(() => {
         fetchPlaylist();
-        
         // Listen for song catalog changes to refresh playlist data
         const handler = () => {
             fetchPlaylist();
@@ -59,8 +59,6 @@ function PlaylistCard(props) {
 
     async function handleDeleteList(event, id) {
         event.stopPropagation();
-        //let _id = event.target.id;
-        //_id = ("" + _id).substring("delete-list-".length);
         store.markListForDeletion(id);
     }
 
@@ -78,6 +76,9 @@ function PlaylistCard(props) {
     }
     const isMyPlaylist = playlist && auth && auth.user && playlist.ownerEmail === auth.user.email;
 
+    const totalListeners = playlist && playlist.songs ? 
+        playlist.songs.reduce((total, song) => total + (song.listens || 0), 0) : 0;
+
     let cardElement =
         <ListItem
             id={idNamePair._id}
@@ -93,37 +94,37 @@ function PlaylistCard(props) {
                 <div className="flex flex-col w-full">
                     <div className='flex items-center justify-between w-full'>
                         <div>{idNamePair.name}</div>
-                        <div className='flex gap-2'>
+                        <div className='flex'>
                             {isMyPlaylist && <button onClick={(event) => {
                                 handleDeleteList(event, idNamePair._id)
-                            }} aria-label='delete'>
+                            }} className='rounded px-2 py-2 font-bold' aria-label='delete'>
                                 Delete
                             </button>}
-                            {isMyPlaylist && <button onClick={(event) => handleLoadList(event, idNamePair._id)} aria-label='edit'>
+                            {isMyPlaylist && <button onClick={(event) => handleLoadList(event, idNamePair._id)} className='rounded px-2 py-2 font-bold' aria-label='edit'>
                                 Edit
                             </button>}
-                            {auth && auth.loggedIn && <button onClick={handleCopy} aria-label='edit'>
+                            {auth && auth.loggedIn && <button onClick={handleCopy} className='rounded px-2 py-2 font-bold' aria-label='edit'>
                                 Copy
                             </button>}
-                            <button onClick={(e) => { e.stopPropagation(); props.onPlay && props.onPlay(idNamePair._id); }} aria-label='play'>
+                            <button onClick={(e) => { e.stopPropagation(); props.onPlay && props.onPlay(idNamePair._id); }} className='rounded px-2 py-2 font-bold' aria-label='play'>
                                 Play
                             </button>
                         </div>
                     </div>
                     <div>{idNamePair.username || 'No username'}</div>
+                    <div className="text-sm text-gray-600">{totalListeners} {totalListeners === 1 ? 'listener' : 'listeners'}</div>
                 </div>
             </div>
             <div>
                 {
-                    expandSongs && playlist && Array.isArray(playlist.songs) && playlist.songs.map((song, index) => (
-                        <p key={song._id || song.id || song.youTubeId || index}>
+                    expandSongs && playlist?.songs?.map((song, index) => (
+                        <p key={song._id ?? song.id ?? song.youTubeId ?? index}>
                             {index + 1}. {song.title} by {song.artist}{song.year ? ` (${song.year})` : ''}
-                        </p>)
-                    )
+                        </p>
+                    ))
                 }
-
             </div>
-            <button onClick={() => setExpandSongs(!expandSongs)} className="ml-auto">{expandSongs ? "Show Less" : "Show More"}</button>
+            <button onClick={() => setExpandSongs(!expandSongs)} className="ml-auto rounded px-2 py-2 font-bold">{expandSongs ? "Show Less" : "Show More"}</button>
         </ListItem>
 
     return (

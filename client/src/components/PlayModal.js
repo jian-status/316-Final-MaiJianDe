@@ -23,38 +23,58 @@ export default function PlayModal(props) {
         setIsPlaying(false);
     }, [playlist?._id]); // Only reset when playlist ID changes, not on every playlist update
     
-    useEffect(() => {
-        // When the song begins playing, attempt to increment listen count
-        if (!isPlaying || !playlist || !playlist.songs || playlist.songs.length === 0) return;
-        const song = playlist.songs[currentSongIndex];
-        if (!song) return;
-        const key = `${playlist._id}|${song.youTubeId || song.title}`;
-        const listened = JSON.parse(sessionStorage.getItem('listenedSongs') || '[]');
-        if (listened.includes(key)) return;
-        // Call server to increment listens and update local store
-        (async () => {
-            try {
-                const response = await storeRequestSender.incrementSongListen(playlist._id, song.youTubeId, song.title, song.artist, song.year);
-                if (response.status === 200) {
-                    const data = await response.json();
-                    if (data.success && data.song) {
-                        // update local store's listens
-                        if (typeof store.incrementSongListenLocal === 'function') {
-                            store.incrementSongListenLocal(playlist._id, song.youTubeId, data.song.listens);
-                        }
-                        listened.push(key);
-                        sessionStorage.setItem('listenedSongs', JSON.stringify(listened));
-                    }
-                }
-            } catch (err) {
-                console.error('Error increasing listen count:', err);
+useEffect(() => {
+    // When the song begins playing, attempt to increment listen count
+    if (!isPlaying || !playlist?.songs?.length) return;
+    
+    const song = playlist.songs[currentSongIndex];
+    if (!song) return;
+    
+    const key = `${playlist._id}|${song.youTubeId || song.title}`;
+    const listened = JSON.parse(sessionStorage.getItem('listenedSongs') || '[]');
+    
+    if (listened.includes(key)) return;
+    
+    const incrementListen = async () => {
+        try {
+            const response = await storeRequestSender.incrementSongListen(
+                playlist._id, 
+                song.youTubeId, 
+                song.title, 
+                song.artist, 
+                song.year
+            );
+            
+            if (response.status !== 200) {
+                console.error('Failed to increment listen count: Non-200 response');
+                return;
             }
-        })();
+            
+            const data = await response.json();
+            if (!data.success || !data.song) {
+                console.error('Failed to increment listen count: Invalid response data');
+                return;
+            }
+            
+            // Update # of listens in local store
+            if (typeof store.incrementSongListenLocal === 'function') {
+                store.incrementSongListenLocal(playlist._id, song.youTubeId, data.song.listens);
+            }
+            
+            // Mark as listened in session storage
+            listened.push(key);
+            sessionStorage.setItem('listenedSongs', JSON.stringify(listened));
+        } catch (err) {
+            console.error('Error increasing listen count:', err);
+        }
+    };
+    incrementListen();
     }, [isPlaying, currentSongIndex, playlist, store]);
+
     useEffect(() => {
         // Scroll current song into view
-        const el = document.getElementById(`play-song-${currentSongIndex}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const element = document.getElementById(`play-song-${currentSongIndex}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, [currentSongIndex]);
 
     const prevSong = () => {
@@ -94,9 +114,9 @@ export default function PlayModal(props) {
                                 </div>
                             )}
                             <div className="flex gap-2 mb-4">
-                                <button className="px-3 py-1 bg-gray-200 rounded" onClick={prevSong}>Prev</button>
-                                <button className="px-3 py-1 bg-gray-200 rounded" onClick={togglePlay}>{isPlaying ? 'Pause' : 'Play'}</button>
-                                <button className="px-3 py-1 bg-gray-200 rounded" onClick={nextSong}>Next</button>
+                                <button className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold" onClick={prevSong}>Prev</button>
+                                <button className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold" onClick={togglePlay}>{isPlaying ? 'Pause' : 'Play'}</button>
+                                <button className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold" onClick={nextSong}>Next</button>
                             </div>
                             <ul className="mb-4 w-full px-6 flex-1 overflow-y-auto">
                                 {playlist.songs.map((song, idx) => (
@@ -117,7 +137,7 @@ export default function PlayModal(props) {
                         </div>
                     )}
                     <div className='flex gap-2'>
-                        <button className="mt-4 px-4 py-2 bg-purple-600 text-white rounded" onClick={onClose}>Close</button>
+                        <button className="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold" onClick={onClose}>Close</button>
                     </div>
                 </div>
             </div>

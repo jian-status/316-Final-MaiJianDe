@@ -88,18 +88,36 @@ function AuthContextProvider(props) {
     auth.registerUser = async function(username, email, password, passwordVerify) {
         try{   
             const response = await authRequestSender.registerUser(username, email, password, passwordVerify);   
-            if (response.status === 200) {
+            if (response.status === 201) {
                 const data = await response.json();
                 authReducer({
                     type: AuthActionType.REGISTER_USER,
                     payload: {
-                        user: data.user,
-                        loggedIn: true,
+                        user: null,
+                        loggedIn: false,
                         errorMessage: null
                     }
                 })
                 navigate("/login");
-                auth.loginUser(email, password);
+            } else if (response.status === 400) {
+                const errorData = await response.json();
+                authReducer({
+                    type: AuthActionType.REGISTER_USER,
+                    payload: {
+                        user: auth.user,
+                        loggedIn: false,
+                        errorMessage: errorData.error || "Registration failed"
+                    }
+                })
+            } else {
+                authReducer({
+                    type: AuthActionType.REGISTER_USER,
+                    payload: {
+                        user: auth.user,
+                        loggedIn: false,
+                        errorMessage: "Registration failed"
+                    }
+                })
             }
         } catch(error){
             console.error("Registration error:", error);
@@ -150,6 +168,7 @@ function AuthContextProvider(props) {
                 type: AuthActionType.LOGOUT_USER,
                 payload: null
             })
+            sessionStorage.clear();
             navigate("/");
         }
     }

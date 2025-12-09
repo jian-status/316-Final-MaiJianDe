@@ -52,7 +52,28 @@ export default function MUIEditSongModal() {
             store.hideModals();
             return;
         }
-        store.addUpdateSongTransaction(store.currentSongIndex, newSongData);        
+
+        if (store.currentList?.songs) {
+            const { title, artist, youTubeId } = newSongData;
+            const isDuplicate = store.currentList.songs.some((song, index) => 
+                store.currentSongIndex !== index && 
+                song.title === title && 
+                song.artist === artist && 
+                song.youTubeId === youTubeId
+            );
+
+            if (isDuplicate) {
+                alert('A song with the same title, artist, and YouTube ID already exists in this playlist.');
+                return;
+            }
+        }
+        if (store.currentSongIndex === -1) {
+            // Adding a new song
+            store.addCreateSongTransaction(store.currentList.songs.length, newSongData.title, newSongData.artist, newSongData.year, newSongData.youTubeId);
+        } else {
+            // Updating an existing song
+            store.addUpdateSongTransaction(store.currentSongIndex, newSongData);
+        }
         store.hideModals();
     }
 
@@ -110,10 +131,10 @@ export default function MUIEditSongModal() {
             </Typography>
             <div className='flex gap-4'>
                 <Button 
-                    sx={{color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
-                    id="edit-song-confirm-button" onClick={handleConfirmEditSong} className='px-4 py-2' disabled={!isSongOwnedByUser}>Confirm</Button>
+                    sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' }, fontSize: 13, fontWeight: 'bold', mt:"20px", px: 5, py: 1}} variant="contained" 
+                    id="edit-song-confirm-button" onClick={handleConfirmEditSong} disabled={!isSongOwnedByUser}>Confirm</Button>
                 <Button 
-                    sx={{opacity: 0.80, color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
+                    sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' }, fontSize: 13, fontWeight: 'bold', mt:"20px", px: 5, py: 1}} variant="contained" 
                     id="edit-song-confirm-button" onClick={handleCancelEditSong}>Cancel</Button>
             {!isSongOwnedByUser && (
                 <Typography sx={{mt: "10px", color: "#FF0000", fontWeight:"bold"}} id="edit-song-not-allowed">

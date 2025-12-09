@@ -122,19 +122,21 @@ export default function AppBanner() {
                     <Link to='/playlists' style={{ textDecoration: 'none', color: 'white', marginLeft: '20px' }}>Playlist Catalog</Link>
 
                     <Box sx={{ flexGrow: 1 }}>{editToolbar}</Box>
-                    <Box sx={{ height: "90px", display: { xs: 'none', md: 'flex' } }}>
-                        <IconButton
-                            size="large"
-                            edge="end"
-                            aria-label="account of current user"
-                            aria-controls={menuId}
-                            aria-haspopup="true"
-                            onClick={handleProfileMenuOpen}
-                            color="inherit"
-                        >
-                            { getAccountMenu(auth.loggedIn) }
-                        </IconButton>
-                    </Box>
+                    <div>
+                        <Box sx={{ height: "90px", display: { xs: 'none', md: 'flex' } }}>
+                            <IconButton
+                                size="large"
+                                edge="end"
+                                aria-label="account of current user"
+                                aria-controls={menuId}
+                                aria-haspopup="true"
+                                onClick={handleProfileMenuOpen}
+                                color="inherit"
+                            >
+                                { getAccountMenu(auth.loggedIn) }
+                            </IconButton>
+                        </Box>
+                    </div>
                 </Toolbar>
             </AppBar>
             {

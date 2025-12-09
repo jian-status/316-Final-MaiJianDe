@@ -1,8 +1,11 @@
 import React, { useReducer, useContext } from 'react';
 import SongCard from './SongCard';
 import MUIDeleteSongModal from './MUIDeleteSongModal';
+import MUIEditSongModal from './MUIEditSongModal';
+import MUIAddSongModal from './MUIAddSongModal';
 import { GlobalStoreContext } from '../store';
 import AuthContext from '../auth';
+import storeRequestSender from '../store/requests';
 
 const handleSongClick = (song) => {
 }
@@ -55,6 +58,8 @@ const sortSongsReducer = (state, action) => {
     switch (action.type) {
         case 'SET_SONGS':
             return { ...state, data: sortData(action.payload, state.sortBy) };
+        case 'SORT_BY_listensHiLo':
+        case 'SORT_BY_listensLoHi':
         case 'SORT_BY_playlistCountHiLo':
         case 'SORT_BY_playlistCountLoHi':
         case 'SORT_BY_songArtist':
@@ -77,10 +82,18 @@ function SongCatalogScreen() {
         sortBy: 'SORT_BY_songTitle'
     });
     const [selectedSong, setSelectedSong] = React.useState(null);
+    const [youtubePlayer, setYoutubePlayer] = React.useState(null);
 
     const handleSongClick = (song) => {
         setSelectedSong(song);
     };
+
+    const handleAddNewSong = () => {
+        store.showAddSongModal();
+    };
+
+    // Get user's playlists to check if Add Song button should be enabled
+    const userPlaylists = store.idNamePairs ? store.idNamePairs.filter(pair => pair.ownerEmail === auth.user.email) : [];
 
     const handleSearch = async () => {
         // filterList state
@@ -88,7 +101,8 @@ function SongCatalogScreen() {
         const params = new URLSearchParams({
             title: filterList.title,
             artist: filterList.artist,
-            year: filterList.year
+            year: filterList.year,
+            limit: '100'
         });   
         await fetch(`http://localhost:4000/store/songs/getSongCatalog?${params}`, {
             method: 'GET',
@@ -108,13 +122,95 @@ function SongCatalogScreen() {
         }
     };
 
+    const handleSongCatalogChanged = React.useCallback(() => {
+        handleSearch();
+    }, []);
+
     React.useEffect(() => {
-        const handler = () => {
-            handleSearch();
+        window.addEventListener('songCatalogChanged', handleSongCatalogChanged);
+        return () => window.removeEventListener('songCatalogChanged', handleSongCatalogChanged);
+    }, [handleSongCatalogChanged]);
+
+    React.useEffect(() => {
+        handleSearch();
+    }, []);
+
+    React.useEffect(() => {
+        if (auth.loggedIn && (!store.idNamePairs || store.idNamePairs.length === 0)) {
+            store.loadIdNamePairs();
+        }
+    }, [auth.loggedIn, store]);
+
+    // Load YouTube API and set up player when song is selected
+    React.useEffect(() => {
+        if (!selectedSong || !selectedSong.youTubeId) {
+            if (youtubePlayer) {
+                youtubePlayer.destroy();
+                setYoutubePlayer(null);
+            }
+            return;
+        }
+
+        // Load YouTube API if not already loaded
+        if (!window.YT) {
+            window.onYouTubeIframeAPIReady = () => {
+                createPlayer();
+            };
+            
+            const script = document.createElement('script');
+            script.src = 'https://www.youtube.com/iframe_api';
+            script.async = true;
+            document.head.appendChild(script);
+        } else if (window.YT && window.YT.Player) {
+            // Small delay to ensure iframe is rendered
+            setTimeout(createPlayer, 100);
+        }
+
+        function createPlayer() {
+            if (window.YT && window.YT.Player && document.getElementById('youtube-player')) {
+                const player = new window.YT.Player('youtube-player', {
+                    events: {
+                        onStateChange: onPlayerStateChange
+                    }
+                });
+                setYoutubePlayer(player);
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            // State 1 means playing
+            if (event.data === 1 && selectedSong) {
+                const key = `catalog|${selectedSong.youTubeId || selectedSong.title}`;
+                const listened = JSON.parse(sessionStorage.getItem('listenedSongs') || '[]');
+                if (listened.includes(key)) return;
+                
+                // Call server to increment listens
+                (async () => {
+                    try {
+                        const response = await storeRequestSender.incrementSongListen(null, selectedSong.youTubeId, selectedSong.title, selectedSong.artist, selectedSong.year);
+                        if (response.status === 200) {
+                            const data = await response.json();
+                            if (data.success && data.song) {
+                                listened.push(key);
+                                sessionStorage.setItem('listenedSongs', JSON.stringify(listened));
+                                // Notify song catalog to refresh
+                                window.dispatchEvent(new Event('songCatalogChanged'));
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error increasing listen count from catalog:', err);
+                    }
+                })();
+            }
+        }
+
+        return () => {
+            if (youtubePlayer && typeof youtubePlayer.destroy === 'function') {
+                youtubePlayer.destroy();
+                setYoutubePlayer(null);
+            }
         };
-        window.addEventListener('songCatalogChanged', handler);
-        return () => window.removeEventListener('songCatalogChanged', handler);
-    }, [filterList]);
+    }, [selectedSong]);
 
     let displaySongs = (songs.data && songs.data.length !== 0) ? songs.data.map((song, idx) =>
         <div onClick={() => handleSongClick(song)} key={song._id || song.id || song.youTubeId || idx}>
@@ -124,9 +220,10 @@ function SongCatalogScreen() {
     return (
         <div className="grid grid-cols-5">
             <div className="col-span-2 p-3">
-                <h1>Song Catalog</h1>
-
                 <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl">Song Catalog</h1>
+
+                    <div className="flex flex-col gap-2">
                     <input 
                         type="text" 
                         placeholder="by Title"
@@ -152,6 +249,7 @@ function SongCatalogScreen() {
                 {selectedSong && selectedSong.youTubeId && (
                     <div className="my-4">
                         <iframe
+                            id="youtube-player"
                             width="100%"
                             height="315"
                             src={`https://www.youtube.com/embed/${selectedSong.youTubeId}`}
@@ -162,10 +260,10 @@ function SongCatalogScreen() {
                         ></iframe>
                     </div>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-4">
                     <button 
                         onClick={handleSearch}
-                        className=""
+                        className="bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 text-white font-bold"
                     >
                         Search
                     </button>
@@ -175,14 +273,15 @@ function SongCatalogScreen() {
                             dispatchSongs({ type: 'SET_SONGS', payload: null });
                             setSelectedSong(null);
                         }}
-                        className=""
+                        className="bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 text-white font-bold"
                     >
                         Clear
                     </button>
                 </div>
+                </div>
             </div>
             <div className="col-span-3 p-3">
-                { songs.data === null ? <div>Begin by using the search fields to filter songs.</div> : (
+                { songs.data === null ? <div>Loading songs...</div> : (
                     <div>
                         <div className="flex justify-between items-center">
                             <div className="flex gap-2 items-center">
@@ -203,19 +302,36 @@ function SongCatalogScreen() {
                                 </select>
                             </div>
                             <div>
-                                <span>{songs.data.length} Songs</span>
+                                <span className="text-xl mb-4">{songs.data.length >= 100 ? '100+' : songs.data.length} Songs</span>
                             </div>
                         </div>
                         <div className="overflow-y-auto max-h-[55vh] mt-4 flex flex-col gap-2">
                             { displaySongs }
                         </div>
                         {auth && auth.loggedIn && (
-                            <button>Add Song</button>
+                            <div className="flex items-center gap-2 mt-4">
+                                <button 
+                                    onClick={handleAddNewSong} 
+                                    disabled={userPlaylists.length === 0}
+                                    className={`rounded px-4 py-2 text-white font-bold ${
+                                        userPlaylists.length === 0 
+                                            ? 'bg-gray-400 cursor-not-allowed' 
+                                            : 'bg-purple-600 hover:bg-purple-500'
+                                    }`}
+                                >
+                                    Add Song
+                                </button>
+                                {userPlaylists.length === 0 && (
+                                    <span className="text-red-500 text-sm">No playlists to add song to</span>
+                                )}
+                            </div>
                         )}
                     </div>
                 )}
             </div>
             <MUIDeleteSongModal />
+            <MUIEditSongModal />
+            <MUIAddSongModal />
         </div>
     );
 }

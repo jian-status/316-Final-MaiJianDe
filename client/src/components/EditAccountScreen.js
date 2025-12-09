@@ -161,7 +161,7 @@ export default function EditAccountScreen() {
                         type="submit"
                         fullWidth
                         variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
+                        sx={{ mt: 3, mb: 2, bgcolor: '#9333ea', '&:hover': { bgcolor: '#7c3aed' } }}
                     >
                         Save Changes
                     </Button>

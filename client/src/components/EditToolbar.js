@@ -1,4 +1,5 @@
 import { useContext } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { GlobalStoreContext } from '../store'
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,9 +15,10 @@ import CloseIcon from '@mui/icons-material/HighlightOff';
 */
 function EditToolbar() {
     const { store } = useContext(GlobalStoreContext);
+    const navigate = useNavigate();
 
     function handleAddNewSong() {
-        store.addNewSong();
+        navigate('/SongCatalogScreen');
     }
     function handleUndo() {
         store.undo();
@@ -37,7 +39,8 @@ function EditToolbar() {
                 disabled={!store.canAddNewSong()}
                 id='add-song-button'
                 onClick={handleAddNewSong}
-                variant="contained">
+                variant="contained"
+                sx={{ mt: 2 }}>
                 <AddIcon />
             </Button>
             <Button

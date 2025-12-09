@@ -31,6 +31,7 @@ export const GlobalStoreActionType = {
     SET_CURRENT_LIST: "SET_CURRENT_LIST",
     SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
     EDIT_SONG: "EDIT_SONG",
+    ADD_SONG: "ADD_SONG",
     REMOVE_SONG: "REMOVE_SONG",
     DELETE_SONG: "DELETE_SONG",
     HIDE_MODALS: "HIDE_MODALS",
@@ -46,6 +47,7 @@ const CurrentModal = {
     NONE : "NONE",
     DELETE_LIST : "DELETE_LIST",
     EDIT_SONG : "EDIT_SONG",
+    ADD_SONG : "ADD_SONG",
     DELETE_SONG : "DELETE_SONG",
     ERROR : "ERROR"
 }
@@ -200,6 +202,20 @@ function GlobalStoreContextProvider(props) {
                     currentList: store.currentList,
                     currentSongIndex: payload.currentSongIndex,
                     currentSong: payload.currentSong,
+                    newListCounter: store.newListCounter,
+                    listNameActive: false,
+                    listIdMarkedForDeletion: null,
+                    listMarkedForDeletion: null
+                });
+            }
+            case GlobalStoreActionType.ADD_SONG: {
+                return setStore({
+                    ...store,
+                    currentModal : CurrentModal.ADD_SONG,
+                    idNamePairs: store.idNamePairs,
+                    currentList: store.currentList,
+                    currentSongIndex: null,
+                    currentSong: null,
                     newListCounter: store.newListCounter,
                     listNameActive: false,
                     listIdMarkedForDeletion: null,
@@ -512,6 +528,12 @@ function GlobalStoreContextProvider(props) {
         storeReducer({
             type: GlobalStoreActionType.EDIT_SONG,
             payload: {currentSongIndex: songIndex, currentSong: songToEdit}
+        });        
+    }
+    store.showAddSongModal = () => {
+        storeReducer({
+            type: GlobalStoreActionType.ADD_SONG,
+            payload: {}
         });        
     }
     store.showDeleteSongModal = (song, songIndex) => {

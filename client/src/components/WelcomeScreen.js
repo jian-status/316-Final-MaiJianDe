@@ -29,27 +29,27 @@ export default function WelcomeScreen() {
                         variant="contained"
                         size="large"
                         onClick={handleContinueAsGuest}
-                        sx={{ py: 1.5 }}
+                        sx={{ py: 1.5, bgcolor: '#9333ea', '&:hover': { bgcolor: '#7c3aed' } }}
                     >
                         Continue as Guest
                     </Button>
 
                     <Button
-                        variant="outlined"
+                        variant="contained"
                         size="large"
                         component={Link}
                         to="/login"
-                        sx={{ py: 1.5 }}
+                        sx={{ py: 1.5, bgcolor: '#9333ea', '&:hover': { bgcolor: '#7c3aed' } }}
                     >
                         Login
                     </Button>
 
                     <Button
-                        variant="outlined"
+                        variant="contained"
                         size="large"
                         component={Link}
                         to="/register"
-                        sx={{ py: 1.5 }}
+                        sx={{ py: 1.5, bgcolor: '#9333ea', '&:hover': { bgcolor: '#7c3aed' } }}
                     >
                         Sign Up
                     </Button>

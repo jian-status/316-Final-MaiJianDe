@@ -48,10 +48,10 @@ export default function MUIDeleteModal() {
                 </Typography>
                 <div className='flex gap-4'>
                     <Button 
-                        sx={{color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
-                        id="delete-playlist-confirm-button" onClick={handleDeleteList} className='px-4 py-2'>Confirm</Button>
+                        sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' }, fontSize: 13, fontWeight: 'bold', mt:"20px", px: 5, py: 1}} variant="contained" 
+                        id="delete-playlist-confirm-button" onClick={handleDeleteList}>Confirm</Button>
                     <Button 
-                        sx={{opacity: 0.80, color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
+                        sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' }, fontSize: 13, fontWeight: 'bold', mt:"20px", px: 5, py: 1}} variant="contained" 
                         id="delete-playlist-cancel-button" onClick={handleCloseModal}>Cancel</Button>
                 </div>
             </div>

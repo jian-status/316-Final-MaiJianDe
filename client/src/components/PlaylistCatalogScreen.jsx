@@ -130,7 +130,7 @@ function PlaylistCatalogScreen() {
     }, [pendingPlayId, store.currentList]);
 
     let displayPlaylists = (playlists.data && playlists.data.length !== 0)
-        ? playlists.data.map(playlist => (
+        ? playlists.data.slice(0, 100).map(playlist => (
             <div key={playlist._id}>
                 <PlaylistCard
                     key={playlist._id}
@@ -146,7 +146,7 @@ function PlaylistCatalogScreen() {
         <div className="grid grid-cols-5">
             <div className="col-span-2 p-3">
                 <div className="flex flex-col gap-2">
-                    <h1>Playlist Catalog</h1>
+                    <h1 className="text-3xl">Playlist Catalog</h1>
                     <div className='flex flex-col'>
                         <input
                             type="text"
@@ -184,13 +184,13 @@ function PlaylistCatalogScreen() {
                             className="px-5 py-2 border rounded"
                         />
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={handleSearch}>Search</button>
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={handleSearch} className="bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 text-white font-bold">Search</button>
                         <button onClick={() => {
                             dispatchFilterList({ type: 'CLEAR' });
                             dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: filterList.allPlaylists });
                             handlePlaylistClick(null);
-                        }}>Clear</button>
+                        }} className="bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 text-white font-bold">Clear</button>
                     </div>
                 </div>
             </div>
@@ -210,7 +210,7 @@ function PlaylistCatalogScreen() {
                                 </select>
                             </div>
                             <div>
-                                <span>{playlists.data.length} Playlists</span>
+                                <span className="text-xl mb-4">{playlists.data.length > 100 ? '100+' : playlists.data.length} Playlists</span>
                             </div>
                         </div>
                         <div className="overflow-y-auto max-h-[55vh] mt-4 flex flex-col gap-2">

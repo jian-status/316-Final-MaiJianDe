@@ -48,15 +48,12 @@ export default function MUIDeleteSongModal() {
                 <Typography sx={{mt: "10px", color: "#702963", fontWeight:"bold", fontSize:"30px"}} id="modal-modal-title" variant="h6" component="h2">
                     Are you sure you want to delete the song <span style={{textDecoration: 'underline', color: '#820747CF'}}>{title}</span> by {artist}?
                 </Typography>
-                <Typography sx={{mt: "10px", color: "#702963", fontSize:"18px"}} variant="body1">
-                    This cannot be undone.
-                </Typography>
                 <div className='flex gap-4'>
                     <Button
-                        sx={{color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined"
-                        id="delete-song-confirm-button" onClick={handleDeleteSong} className='px-4 py-2'>Confirm</Button>
+                        sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' }, fontSize: 13, fontWeight: 'bold', mt:"20px", px: 5, py: 1}} variant="contained"
+                        id="delete-song-confirm-button" onClick={handleDeleteSong}>Confirm</Button>
                     <Button
-                        sx={{opacity: 0.80, color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined"
+                        sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' }, fontSize: 13, fontWeight: 'bold', mt:"20px", px: 5, py: 1}} variant="contained"
                         id="delete-song-cancel-button" onClick={handleCloseModal}>Cancel</Button>
                 </div>
             </div>

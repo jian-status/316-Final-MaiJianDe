@@ -10,11 +10,12 @@ const style = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    height: 200,
-    width: 400,
+    minHeight: 150,
+    minWidth: 300,
+    maxWidth: 500,
     border: '5px solid yellow',
-    fontSize: "20px",
-    p: 4
+    fontSize: "16px",
+    p: 3
 };
 
 

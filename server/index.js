@@ -22,11 +22,13 @@ let db = null;
 
 async function startServer() {
     try {
-        
+        console.log('Starting server...');
         const PostgresManager = require('./db/postgre');
         db = new PostgresManager();
         await db.connection;
+        console.log('Database connected, resetting DB...');
         await db.resetDB(); 
+        console.log('Database reset complete');
         
         module.exports.db = db;
         
@@ -34,7 +36,9 @@ async function startServer() {
         app.use('/auth', authRouter)
         const storeRouter = require('./routes/store-router')
         app.use('/store', storeRouter)
-        app.listen(PORT, () => console.log(`Playlister Server running on port ${PORT}`));
+        app.listen(PORT, () => {
+        
+    });
         
     } catch (error) {
         console.error('Failed to start server:', error);

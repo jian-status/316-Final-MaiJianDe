@@ -157,6 +157,7 @@ class PostgresManager extends DatabaseManager {
     try {
       await model.drop();
     } catch (err) {
+      console.error(`Failed to drop table ${name}:`, err.message);
     }
   }
 
@@ -165,14 +166,15 @@ class PostgresManager extends DatabaseManager {
       // Normalize incoming test data for the User model
       let normalized = data;
       if (name === 'User') {
-        normalized = await Promise.all(data.map(async (u) => {
+        const hashedPassword = await bcrypt.hash('password', 10);
+        normalized = data.map((u) => {
           const username = u.username || u.name || u.Name || u.user || u.email || 'user';
-          const passwordHash = u.passwordHash || await bcrypt.hash('password', 10);
-          return { username: username, email: u.email, passwordHash };
-        }));
+          return { username: username, email: u.email, passwordHash: hashedPassword };
+        });
       }
       await model.bulkCreate(normalized);
     } catch (err) {
+      console.error(`Failed to fill table ${name}:`, err.message);
     }
   }
 
@@ -192,6 +194,7 @@ class PostgresManager extends DatabaseManager {
         }
       }
     } catch (err) {
+      console.error('Failed to fill songs:', err.message);
     }
   }
 
@@ -208,6 +211,7 @@ class PostgresManager extends DatabaseManager {
     await this.fillTable(User, "User", testData.users);
     await this.fillTable(Playlist, "Playlist", testData.playlists);
     await this.fillSongs(testData);
+    console.log('resetDB completed');
   }
 
   async getUser(userId) {
@@ -588,13 +592,17 @@ class PostgresManager extends DatabaseManager {
 
   async filterSongCatalog(filters) {
     try {
-      const { title, artist, year } = filters
+      const { title, artist, year, limit } = filters
       const songs = await this.getAllSongs();
-      return songs.filter((song) => 
+      const filteredSongs = songs.filter((song) => 
           (title ? song.title.toLowerCase().startsWith(title.toLowerCase().trim()) : true) &&
           (artist ? song.artist.toLowerCase().startsWith(artist.toLowerCase().trim()) : true) &&
           (year ? parseInt(song.year) === parseInt(year) : true)
       );
+      
+      // Apply limit if specified
+      const limitNum = limit ? parseInt(limit) : null;
+      return limitNum ? filteredSongs.slice(0, limitNum) : filteredSongs;
 
     } catch (err) {
       console.error('Could not filter Song Catalog:', err.message);

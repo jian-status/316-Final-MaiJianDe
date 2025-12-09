@@ -135,8 +135,8 @@ export default function EditAccountModal() {
                 />
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                    <Button onClick={handleClose}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSave}>Save Changes</Button>
+                    <Button onClick={handleClose} sx={{ bgcolor: '#9333ea', color: 'white', '&:hover': { bgcolor: '#7c3aed' } }}>Cancel</Button>
+                    <Button variant="contained" onClick={handleSave} sx={{ bgcolor: '#9333ea', '&:hover': { bgcolor: '#7c3aed' } }}>Save Changes</Button>
                 </Box>
             </Box>
         </Modal>
