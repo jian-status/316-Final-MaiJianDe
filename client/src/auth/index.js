@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom'
 import authRequestSender from './requests'
+import { GlobalStoreContext } from '../store';
 
 const AuthContext = createContext();
 
@@ -20,6 +21,7 @@ function AuthContextProvider(props) {
         isAuthReady: false
     });
     const navigate = useNavigate();
+    const { store } = React.useContext(GlobalStoreContext);
 
     useEffect(() => {
         auth.getLoggedIn();
@@ -77,16 +79,17 @@ function AuthContextProvider(props) {
                     user: data.user
                 }
             });
+            if (data.loggedIn && store) {
+                store.loadIdNamePairs();
+            }
         }
     }
 
     auth.registerUser = async function(username, email, password, passwordVerify) {
-        // registering user
         try{   
             const response = await authRequestSender.registerUser(username, email, password, passwordVerify);   
             if (response.status === 200) {
                 const data = await response.json();
-                // registered user
                 authReducer({
                     type: AuthActionType.REGISTER_USER,
                     payload: {
@@ -96,9 +99,7 @@ function AuthContextProvider(props) {
                     }
                 })
                 navigate("/login");
-                // now logging in
                 auth.loginUser(email, password);
-                // logged in
             }
         } catch(error){
             console.error("Registration error:", error);
@@ -126,6 +127,8 @@ function AuthContextProvider(props) {
                         errorMessage: null
                     }
                 })
+                // Load the user's playlists after login
+                if (store) store.loadIdNamePairs();
                 navigate("/");
             }
         } catch(error){

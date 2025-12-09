@@ -19,7 +19,8 @@ function Statusbar() {
 
     function handleKeyPress(event) {
         if (event.code === "Enter" && store.currentList && listName !== store.currentList.name) {
-            const usingListNames = store.idNamePairs.map(pair => pair.name)
+            console.log(store.idNamePairs)
+            const usingListNames = (store.idNamePairs || []).map(pair => pair.name)
             if (listName.trim() === '') {
                 setErrorMessage('Playlist name cannot be empty.');
                 return;
@@ -39,7 +40,6 @@ function Statusbar() {
         }
     }, [store.currentList]);
 
-    console.log("logged in: " +  auth.loggedIn);
     let text ="";
     if (auth.loggedIn && store.isEditingPlaylist && store.currentList){
         text = store.currentList.name;

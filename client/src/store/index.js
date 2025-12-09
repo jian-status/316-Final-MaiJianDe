@@ -117,8 +117,8 @@ function GlobalStoreContextProvider(props) {
                 return setStore({
                     ...store,
                     currentModal : CurrentModal.NONE,
-                    idNamePairs: store.idNamePairs,
-                    currentList: payload,
+                    idNamePairs: payload.idNamePairs,
+                    currentList: payload.playlist,
                     currentSongIndex: -1,
                     currentSong: null,
                     newListCounter: store.newListCounter + 1,
@@ -376,21 +376,59 @@ function GlobalStoreContextProvider(props) {
             if (!newList.songs) {
                 newList.songs = [];
             }
-            storeReducer({
-                type: GlobalStoreActionType.CREATE_NEW_LIST,
-                payload: newList
-            });
-            setStore(prev => ({ ...prev, isNewPlaylist: true, isEditingPlaylist: true }));
+            // Fetch updated playlist pairs
+            const pairsResponse = await storeRequestSender.getPlaylistPairs();
+            if (pairsResponse.status === 200) {
+                const pairsData = await pairsResponse.json();
+                if (pairsData.success) {
+                    let pairsArray = pairsData.idNamePairs;
+                    storeReducer({
+                        type: GlobalStoreActionType.CREATE_NEW_LIST,
+                        payload: { idNamePairs: pairsArray, playlist: newList }
+                    });
+                    setStore(prev => ({ ...prev, isNewPlaylist: true, isEditingPlaylist: true }));
+                } else {
+                    console.error("FAILED TO GET UPDATED LIST PAIRS AFTER CREATION");
+                }
+            } else {
+                console.error("FAILED TO FETCH LIST PAIRS AFTER CREATION");
+            }
         }
         else {
             console.error("FAILED TO CREATE A NEW LIST");
         }
     }
-    store.createNewListFromCopy = async function (listName, songs) {
-        const response = await storeRequestSender.createPlaylist(listName, songs, auth.user.email);
+    store.createNewListFromCopy = async function (listName, songs, originalOwnerEmail) {
+        console.log("createNewListFromCopy - listName:", listName);
+        console.log("createNewListFromCopy - songs:", songs);
+        console.log("createNewListFromCopy - songs.length:", songs ? songs.length : 'null/undefined');
+        const copiedSongs = (songs || []).map(s => {
+            console.log('Copying song:', s.title, 'current playlistCount:', s.playlistCount);
+            return {
+                title: s.title,
+                artist: s.artist,
+                year: s.year,
+                youTubeId: s.youTubeId,
+                ownerEmail: s.ownerEmail || originalOwnerEmail || ''
+            };
+        });
+        const response = await storeRequestSender.createPlaylist(listName, copiedSongs, auth.user.email);
         if (response.status === 201) {
             const data = await response.json();
             tps.clearAllTransactions();
+            
+            // Add a small delay to ensure server-side increments are fully committed
+            await new Promise(resolve => setTimeout(resolve, 150));
+            
+            // Refresh the playlist pairs to show the new copied playlist in the catalog
+            store.loadIdNamePairs();
+            // Notify other components that song catalog counts may have changed
+            try {
+                window.dispatchEvent(new Event('songCatalogChanged'));
+            } catch (err) {}
+        }
+        else {
+            console.error("FAILED TO CREATE A NEW LIST FROM COPY");
         }
     }
     // THIS FUNCTION LOADS ALL THE ID, NAME PAIRS SO WE CAN LIST ALL THE LISTS
@@ -575,6 +613,10 @@ function GlobalStoreContextProvider(props) {
     // USING THE PROVIDED DATA AND PUTS THIS SONG AT INDEX
     store.createSong = function(index, song) {
         let list = store.currentList;
+        // Ensure the new song has an ownerEmail: default to playlist owner
+        if (!song.ownerEmail) {
+            song.ownerEmail = list.ownerEmail || (auth && auth.user ? auth.user.email : '');
+        }
         list.songs.splice(index, 0, song);
         // NOW MAKE IT OFFICIAL
         store.updateCurrentList();
@@ -638,6 +680,7 @@ function GlobalStoreContextProvider(props) {
             year: year,
             youTubeId: youTubeId
         };
+        if (!song.ownerEmail) song.ownerEmail = store && store.currentList ? (store.currentList.ownerEmail || (auth && auth.user ? auth.user.email : '')) : (auth && auth.user ? auth.user.email : '');
         let transaction = new CreateSong_Transaction(store, index, song);
         tps.processTransaction(transaction);
     }    
@@ -651,6 +694,50 @@ function GlobalStoreContextProvider(props) {
         //let song = store.currentList.songs[index];
         let transaction = new RemoveSong_Transaction(store, index, song);
         tps.processTransaction(transaction);
+    }
+
+    // Add an arbitrary song to a playlist (by playlistId). Only allowed for playlists owned by the logged in user.
+    store.addSongToPlaylist = async function(playlistId, song) {
+        try {
+            // First check if this song already exists globally
+            // Allow adding duplicates (deep copy) even if song exists globally; ownership is set to the user adding the song.
+
+            // fetch the playlist
+            let response = await storeRequestSender.getPlaylistById(playlistId);
+            if (response.status === 200) {
+                const data = await response.json();
+                if (data.success) {
+                    let playlist = data.playlist;
+                    if (!playlist.songs) playlist.songs = [];
+                    const songToAddWithOwner = { ...song, ownerEmail: auth && auth.user ? auth.user.email : playlist.ownerEmail };
+                    playlist.songs.push(songToAddWithOwner);
+                    response = await storeRequestSender.updatePlaylistById(playlistId, playlist);
+                    if (response.status === 200) {
+                        const updateData = await response.json();
+                        if (updateData.success) {
+                            response = await storeRequestSender.getPlaylistById(playlistId);
+                            if (response.status === 200) {
+                                const refetchData = await response.json();
+                                if (refetchData.success) {
+                                    playlist = refetchData.playlist;
+                                }
+                            }
+                            // If this playlist is currently loaded, update local currentList
+                            if (store.currentList && store.currentList._id === playlistId) {
+                                storeReducer({ type: GlobalStoreActionType.SET_CURRENT_LIST, payload: playlist });
+                            }
+                            // Notify catalogs to refresh counts
+                            try { window.dispatchEvent(new Event('songCatalogChanged')); } catch (err) {}
+                            return { success: true };
+                        }
+                    }
+                }
+            }
+            return { success: false };
+        } catch (err) {
+            console.error('addSongToPlaylist error:', err);
+            return { success: false, error: err.message };
+        }
     }
     store.addUpdateSongTransaction = function (index, newSongData) {
         let song = store.currentList.songs[index];
@@ -673,6 +760,10 @@ function GlobalStoreContextProvider(props) {
                         type: GlobalStoreActionType.SET_CURRENT_LIST,
                         payload: store.currentList
                     });
+                    // Notify other components that song catalog counts may have changed
+                    try {
+                        window.dispatchEvent(new Event('songCatalogChanged'));
+                    } catch (err) {}
                 }
             }
         }

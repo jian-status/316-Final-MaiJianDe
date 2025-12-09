@@ -1,6 +1,9 @@
 const auth = require('../auth')
 const bcrypt = require('bcryptjs')
-const { db } = require('../index'); // DB instance
+const indexModule = require('../index'); // DB instance
+
+// Helper function to get db instance at runtime
+const getDb = () => indexModule.db;
 
 getLoggedIn = async (req, res) => {
     try {
@@ -13,7 +16,7 @@ getLoggedIn = async (req, res) => {
             })
         }
 
-        const loggedInUser = await db.getUser(userId);
+        const loggedInUser = await getDb().getUser(userId);
 
         return res.status(200).json({
             loggedIn: true,
@@ -38,7 +41,7 @@ loginUser = async (req, res) => {
                 .json({ errorMessage: "Please enter all required fields." });
         }
 
-        const existingUser = await db.getUserByEmail(email);
+        const existingUser = await getDb().getUserByEmail(email);
         if (!existingUser) {
             return res
                 .status(401)
@@ -115,7 +118,7 @@ registerUser = async (req, res) => {
                 })
         }
         console.log("password and password verify match");
-        const existingUser = await db.getUserByEmail(email);
+        const existingUser = await getDb().getUserByEmail(email);
         console.log("existingUser: " + existingUser);
         if (existingUser) {
             return res
@@ -131,7 +134,7 @@ registerUser = async (req, res) => {
         const passwordHash = await bcrypt.hash(password, salt);
         console.log("passwordHash: " + passwordHash);
 
-        const savedUser = await db.createUser({username, email, passwordHash});
+        const savedUser = await getDb().createUser({username, email, passwordHash});
         console.log("new user saved: " + savedUser._id);
 
         // LOGIN THE USER

@@ -20,11 +20,13 @@ function PlaylistCard(props) {
     const [playlist, setPlaylist] = useState(null);
     const { auth } = useContext(AuthContext);
     
-    useEffect(() => {
+    const fetchPlaylist = () => {
+        console.log(`PlaylistCard: Fetching playlist ${idNamePair._id} (${idNamePair.name})`);
         getPlaylistById(idNamePair._id)
             .then((res) => res.json())
             .then((data) => {
                 if (data && data.success && data.playlist) {
+                    console.log(`PlaylistCard: Received playlist ${idNamePair.name}, first song count:`, data.playlist.songs?.[0]?.playlistCount);
                     setPlaylist(data.playlist);
                 } else {
                     setPlaylist(null);
@@ -34,7 +36,23 @@ function PlaylistCard(props) {
                 setPlaylist(null);
                 console.log(err);
             });
-    }, []);
+    };
+    
+    useEffect(() => {
+        console.log(`PlaylistCard ${idNamePair.name}: Setting up effect`);
+        fetchPlaylist();
+        
+        // Listen for song catalog changes to refresh playlist data
+        const handler = () => {
+            console.log(`PlaylistCard ${idNamePair.name}: Received songCatalogChanged event`);
+            fetchPlaylist();
+        };
+        window.addEventListener('songCatalogChanged', handler);
+        return () => {
+            console.log(`PlaylistCard ${idNamePair.name}: Cleaning up event listener`);
+            window.removeEventListener('songCatalogChanged', handler);
+        };
+    }, [idNamePair._id]);
     function handleLoadList(event, id) {
         console.log("handleLoadList for " + id);
         if (!event.target.disabled) {
@@ -67,7 +85,9 @@ function PlaylistCard(props) {
             console.error("No playlist available to copy");
             return;
         }
-        store.createNewListFromCopy(idNamePair.name + ` Copy_${new Date().getTime()}`, toCopy.songs || []);
+        console.log("handleCopy - toCopy:", toCopy);
+        console.log("handleCopy - toCopy.songs:", toCopy.songs);
+        store.createNewListFromCopy(idNamePair.name + ` Copy_${new Date().getTime()}`, toCopy.songs || [], toCopy.ownerEmail || null);
     }
     const isMyPlaylist = playlist && auth && auth.user && playlist.ownerEmail === auth.user.email;
 

@@ -32,7 +32,7 @@ export default function WorkspaceScreen() {
         >
             {
                 store.currentList.songs.map((song, index) => {
-                    const songKey = song._id || song.id || song.youTubeId || index;
+                    const songKey = `${index}-${song.youTubeId || 'unknown'}`;
                     return (
                         <SongCard
                             id={'playlist-song-' + songKey}

@@ -1,6 +1,7 @@
 const { Sequelize, DataTypes, Model } = require('sequelize');
 const DatabaseManager = require("../index.js");
 const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
 
 // Ensure environment variables are loaded
 dotenv.config();
@@ -60,6 +61,11 @@ Song.init({
   youTubeId: { 
     type: DataTypes.TEXT
   },
+  ownerEmail: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: ''
+  },
   listens: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -69,7 +75,7 @@ Song.init({
     type: DataTypes.INTEGER,
     field: 'PlaylistCount',
     allowNull: false,
-    defaultValue: 1
+    defaultValue: 0
   },
   playlistId: {
     type: DataTypes.STRING,
@@ -81,7 +87,7 @@ Song.init({
   }
 }, { 
   sequelize, 
-  modelName: 'Song',
+  modelName: 'Song'
 });
 
 class Playlist extends Model {}
@@ -152,7 +158,16 @@ class PostgresManager extends DatabaseManager {
 
   async fillTable(model, name, data) {
     try {
-      await model.bulkCreate(data);
+      // Normalize incoming test data for the User model
+      let normalized = data;
+      if (name === 'User') {
+        normalized = await Promise.all(data.map(async (u) => {
+          const username = u.username || u.name || u.Name || u.user || u.email || 'user';
+          const passwordHash = u.passwordHash || await bcrypt.hash('password', 10);
+          return { username: username, email: u.email, passwordHash };
+        }));
+      }
+      await model.bulkCreate(normalized);
       console.log(`Filled ${name}`)
     } catch (err) {
       console.log(`Could not fill ${name}:`, err.message);
@@ -169,6 +184,7 @@ class PostgresManager extends DatabaseManager {
           const songs = data.songs.map((song) => ({
             ...song,
             playlistId: res._id,
+            ownerEmail: res.ownerEmail // set song owner to playlist owner when seeding
           }));
           await Song.bulkCreate(songs);
         }
@@ -253,12 +269,48 @@ class PostgresManager extends DatabaseManager {
 
   async getPlaylist(playlistId) {
     try {
-      return await Playlist.findByPk(playlistId, {
+      const playlist = await Playlist.findByPk(playlistId, {
         include: [{
           model: Song,
           as: 'songs'
-        }]
+        }],
+        order: [[{ model: Song, as: 'songs' }, 'id', 'ASC']]
       });
+      
+      if (playlist) {
+        // Convert to plain JSON to ensure songs are included
+        const plainPlaylist = playlist.toJSON();
+        console.log('getPlaylist - songs count:', plainPlaylist.songs ? plainPlaylist.songs.length : 'no songs');
+        
+        // Update each song's playlistCount to reflect the current global count
+        // by querying other instances of the same song
+        if (plainPlaylist.songs && plainPlaylist.songs.length > 0) {
+          for (let i = 0; i < plainPlaylist.songs.length; i++) {
+            const song = plainPlaylist.songs[i];
+            const whereClause = {};
+            
+            if (song.youTubeId) {
+              whereClause.youTubeId = song.youTubeId;
+            } else if (song.title && song.artist) {
+              whereClause.title = song.title;
+              whereClause.artist = song.artist;
+              if (song.year !== undefined && song.year !== null) {
+                whereClause.year = song.year;
+              }
+            }
+            
+            // Find any instance of this song to get the current playlistCount
+            const anySongInstance = await Song.findOne({ where: whereClause });
+            if (anySongInstance) {
+              plainPlaylist.songs[i].playlistCount = anySongInstance.playlistCount;
+            }
+          }
+        }
+        
+        return plainPlaylist;
+      }
+      
+      return playlist;
     } catch (err) {
       console.error("Could not get playlist:", err.message);
       throw err;
@@ -288,6 +340,21 @@ class PostgresManager extends DatabaseManager {
       if (!playlist) {
         throw new Error("deletePlaylist: Could not find playlist");
       }
+      // Before deleting the playlist, find unique songs and decrement their global playlist count
+      const songs = await Song.findAll({ where: { playlistId: playlistId } });
+      const unique = new Map();
+      for (const s of songs) {
+        const key = `${s.title}-${s.artist}-${s.year || ''}`;
+        if (!unique.has(key)) unique.set(key, s);
+      }
+      for (const s of unique.values()) {
+        try {
+          await this.decrementSongPlaylistCount(s.youTubeId, s.title, s.artist, s.year);
+        } catch (err) {
+          console.error('Error decrementing playlist count during deletePlaylist:', err.message);
+        }
+      }
+      // Now destroy the playlist and its songs
       return await playlist.destroy();
     } catch (err) {
       console.error("Could not delete playlist:", err.message);
@@ -300,7 +367,11 @@ class PostgresManager extends DatabaseManager {
       const { songs, ...playlistData } = data;
       const playlist = await Playlist.create(playlistData);      
       if (songs && songs.length > 0) {
-        const newSongs = songs.map(songData => {
+        const newSongs = [];
+        const uniqueSongs = new Map();
+        
+        console.log(`Creating playlist with ${songs.length} songs`);
+        for (const songData of songs) {
           let year = null;
           if (songData.year !== undefined && songData.year !== null && songData.year !== '') {
             const parsedYear = parseInt(songData.year);
@@ -310,18 +381,52 @@ class PostgresManager extends DatabaseManager {
             year = parsedYear;
           }
           
-          return {
+          const songKey = `${songData.title}-${songData.artist}-${year || ''}`;
+          
+          // Add the song to this playlist
+          newSongs.push({
             title: songData.title,
             artist: songData.artist,
             year: year,
             youTubeId: songData.youTubeId,
-            playlistId: playlist._id
-          };
-        });
+            playlistId: playlist._id,
+            ownerEmail: songData.ownerEmail || playlist.ownerEmail // set owner to playlist owner by default, or per-song owner if provided
+            // playlistCount will be set by incrementSongPlaylistCount below
+          });
+          
+          // Track for playlist count increment (only count unique songs)
+          if (!uniqueSongs.has(songKey)) {
+            uniqueSongs.set(songKey, { ...songData, year: year });
+            console.log(`  Unique song: ${songData.title} by ${songData.artist} (${year || 'no year'})`);
+          }
+        }
+        console.log(`Found ${uniqueSongs.size} unique songs out of ${songs.length} total songs`);
         
-        await Song.bulkCreate(newSongs);
+        // Create only the new songs
+        if (newSongs.length > 0) {
+          await Song.bulkCreate(newSongs);
+        }
+        
+        // Wait for all increments to complete - do them sequentially to avoid race conditions
+        for (const songData of uniqueSongs.values()) {
+          try {
+            const result = await this.incrementSongPlaylistCount(
+              songData.youTubeId, 
+              songData.title, 
+              songData.artist, 
+              songData.year
+            );
+            console.log(`Incremented playlist count for ${songData.title} by ${songData.artist} - new count: ${result ? result.playlistCount : 'unknown'}`);
+          } catch (err) {
+            console.error('Error incrementing playlist count:', err.message, err);
+          }
+        }
+        console.log('All playlist count increments completed');
       }
-      return playlist;
+      
+      // Refetch the playlist with updated song counts
+      const finalPlaylist = await this.getPlaylist(playlist._id);
+      return finalPlaylist || playlist;
 
     } catch (err) {
       console.error("Could not create playlist:", err.message);
@@ -340,9 +445,18 @@ class PostgresManager extends DatabaseManager {
       await playlist.update(newPlaylist);
       
       if (songs) {
-        await Song.destroy({ where: { playlistId: listId } });
-        
-        const newSongs = songs.map((songData) => {
+        // Get the current songs in the playlist so we can adjust playlist counts
+        const currentSongs = await Song.findAll({ where: { playlistId: listId } });
+        // Build a set of unique keys for current songs
+        const currentUnique = new Map();
+        for (const s of currentSongs) {
+          const key = `${s.title}-${s.artist}-${s.year || ''}`;
+          if (!currentUnique.has(key)) currentUnique.set(key, s);
+        }
+
+        const newSongs = [];
+        const newUnique = new Map();
+        for (const songData of songs) {
           // Validate year field
           let year = null;
           if (songData.year !== undefined && songData.year !== null && songData.year !== '') {
@@ -353,16 +467,58 @@ class PostgresManager extends DatabaseManager {
             year = parsedYear;
           }
           
-          return {
+          // Add all songs to this playlist
+          const songKey = `${songData.title}-${songData.artist}-${year || ''}`;
+          const existingSong = currentUnique.get(songKey);
+          newSongs.push({
             title: songData.title,
             artist: songData.artist,
             year: year,
             youTubeId: songData.youTubeId,
-            playlistId: listId
-          };
-        });
+            playlistId: listId,
+            ownerEmail: songData.ownerEmail || playlist.ownerEmail, // preserve per-song owner if provided
+            playlistCount: existingSong ? existingSong.playlistCount : 0,
+            listens: existingSong ? existingSong.listens : 0 // preserve listen count
+          });
+          if (!newUnique.has(songKey)) newUnique.set(songKey, songData);
+        }
         
-        await Song.bulkCreate(newSongs);
+        // Determine added and removed unique songs and adjust counts accordingly
+        const removedKeys = [];
+        for (const key of currentUnique.keys()) {
+          if (!newUnique.has(key)) removedKeys.push(key);
+        }
+        const addedKeys = [];
+        for (const key of newUnique.keys()) {
+          if (!currentUnique.has(key)) addedKeys.push(key);
+        }
+
+        // Decrement playlistCount for removed unique songs
+        for (const key of removedKeys) {
+          const s = currentUnique.get(key);
+          try {
+            await this.decrementSongPlaylistCount(s.youTubeId, s.title, s.artist, s.year);
+          } catch (err) {
+            console.error('Error decrementing playlist count for removed song', err.message);
+          }
+        }
+
+        // Recreate the songs (delete current rows)
+        await Song.destroy({ where: { playlistId: listId } });
+
+        if (newSongs.length > 0) {
+          await Song.bulkCreate(newSongs);
+        }
+
+        // Increment playlistCount for newly added unique songs
+        for (const key of addedKeys) {
+          const sd = newUnique.get(key);
+          try {
+            await this.incrementSongPlaylistCount(sd.youTubeId, sd.title, sd.artist, sd.year);
+          } catch (err) {
+            console.error('Error incrementing playlist count for added song', err.message);
+          }
+        }
       }
       return playlist;
       
@@ -431,21 +587,97 @@ class PostgresManager extends DatabaseManager {
 
     async incrementSongListen(playlistId, youTubeId, title, artist, year) {
       try {
-        let whereClause = { playlistId: playlistId };
+        let whereClause = {};
         if (youTubeId) {
           whereClause.youTubeId = youTubeId;
         } else if (title && artist) {
           whereClause.title = title;
           whereClause.artist = artist;
-          if (year) whereClause.year = year;
+          if (year !== undefined) whereClause.year = year;
+        } else {
+          throw new Error('Insufficient data to identify song');
         }
-        const song = await Song.findOne({ where: whereClause });
-        if (!song) throw new Error('Could not find song');
-        song.listens = (song.listens || 0) + 1;
-        await song.save();
-        return song;
+        
+        const songs = await Song.findAll({ where: whereClause });
+        if (!songs || songs.length === 0) {
+          throw new Error('Could not find songs to update');
+        }
+        const maxListens = Math.max(...songs.map(s => s.listens || 0));
+        const newListens = maxListens + 1;
+        
+        for (const s of songs) {
+          s.listens = newListens;
+          await s.save();
+        }
+        
+        return songs[0];
       } catch (err) {
         console.error('Could not increment listens for song:', err.message);
+        throw err;
+      }
+    }
+
+    async incrementSongPlaylistCount(youTubeId, title, artist, year) {
+      try {
+        let whereClause = {};
+        if (youTubeId) {
+          whereClause.youTubeId = youTubeId;
+        } else if (title && artist) {
+          whereClause.title = title;
+          whereClause.artist = artist;
+          if (year !== undefined) whereClause.year = year;
+        } else {
+          throw new Error('Insufficient data to identify song');
+        }
+        const songs = await Song.findAll({ where: whereClause });
+        if (!songs || songs.length === 0) {
+          throw new Error('Could not find songs to update');
+        }
+        console.log(`incrementSongPlaylistCount: Found ${songs.length} instances of ${title} by ${artist}`);
+        
+        // Find the current maximum playlistCount across all instances
+        const maxCount = Math.max(...songs.map(s => s.playlistCount || 1));
+        const newCount = maxCount + 1;
+        
+        // Set all songs to the new count
+        for (const s of songs) {
+          const oldCount = s.playlistCount || 1;
+          s.playlistCount = newCount;
+          await s.save();
+          console.log(`  - Updated song in playlist ${s.playlistId}: ${oldCount} → ${s.playlistCount}`);
+        }
+        // Return the updated song with new count
+        return songs[0];
+      } catch (err) {
+        console.error('Could not increment playlistCount for song:', err.message);
+        throw err;
+      }
+    }
+
+    async decrementSongPlaylistCount(youTubeId, title, artist, year) {
+      try {
+        let whereClause = {};
+        if (youTubeId) {
+          whereClause.youTubeId = youTubeId;
+        } else if (title && artist) {
+          whereClause.title = title;
+          whereClause.artist = artist;
+          if (year !== undefined) whereClause.year = year;
+        } else {
+          throw new Error('Insufficient data to identify song');
+        }
+        const songs = await Song.findAll({ where: whereClause });
+        if (!songs || songs.length === 0) {
+          throw new Error('Could not find songs to update');
+        }
+        // Decrement playlistCount for all matching songs, but never below 0
+        for (const s of songs) {
+          s.playlistCount = Math.max(0, (s.playlistCount || 1) - 1);
+          await s.save();
+        }
+        return songs[0];
+      } catch (err) {
+        console.error('Could not decrement playlistCount for song:', err.message);
         throw err;
       }
     }

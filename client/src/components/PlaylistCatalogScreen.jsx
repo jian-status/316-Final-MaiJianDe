@@ -184,7 +184,7 @@ function PlaylistCatalogScreen() {
                         <button onClick={handleSearch}>Search</button>
                         <button onClick={() => {
                             dispatchFilterList({ type: 'CLEAR' });
-                            dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: null });
+                            dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: filterList.allPlaylists });
                             handlePlaylistClick(null);
                         }}>Clear</button>
                     </div>

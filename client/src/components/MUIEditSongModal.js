@@ -1,5 +1,6 @@
 import { useContext, useState } from 'react'
 import GlobalStoreContext from '../store';
+import AuthContext from '../auth';
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
@@ -20,10 +21,24 @@ const style1 = {
 
 export default function MUIEditSongModal() {
     const { store } = useContext(GlobalStoreContext);
-    const [ title, setTitle ] = useState(store.currentSong.title);
-    const [ artist, setArtist ] = useState(store.currentSong.artist);
-    const [ year, setYear ] = useState(store.currentSong.year);
-    const [ youTubeId, setYouTubeId ] = useState(store.currentSong.youTubeId);
+    const { auth } = useContext(AuthContext);
+    const [ title, setTitle ] = useState('');
+    const [ artist, setArtist ] = useState('');
+    const [ year, setYear ] = useState('');
+    const [ youTubeId, setYouTubeId ] = useState('');
+
+    React.useEffect(() => {
+        if (store && store.currentSong) {
+            setTitle(store.currentSong.title || '');
+            setArtist(store.currentSong.artist || '');
+            setYear(store.currentSong.year || '');
+            setYouTubeId(store.currentSong.youTubeId || '');
+        }
+    }, [store.currentSong]);
+
+    const songOwnerEmail = store && store.currentSong ? store.currentSong.ownerEmail : null;
+    const playlistOwnerEmail = store && store.currentList ? store.currentList.ownerEmail : null;
+    const isSongOwnedByUser = auth && auth.user && ((songOwnerEmail && songOwnerEmail === auth.user.email) || (!songOwnerEmail && playlistOwnerEmail === auth.user.email));
 
     function handleConfirmEditSong() {
         let newSongData = {
@@ -32,7 +47,13 @@ export default function MUIEditSongModal() {
             year: year,
             youTubeId: youTubeId
         };
+        if (!isSongOwnedByUser) {
+            console.warn('User does not own this playlist/song; edit not allowed');
+            store.hideModals();
+            return;
+        }
         store.addUpdateSongTransaction(store.currentSongIndex, newSongData);        
+        store.hideModals();
     }
 
     function handleCancelEditSong() {
@@ -67,33 +88,38 @@ export default function MUIEditSongModal() {
                 Edit Song
             </Typography>
             <Divider sx={{borderBottomWidth: 5, p: '5px', transform: 'translate(-5.5%, 0%)', width:377}}/>
-            <Typography 
+                <Typography 
                 sx={{mt: "10px", color: "#702963", fontWeight:"bold", fontSize:"30px"}} 
                 id="modal-modal-title" variant="h6" component="h2">
-                Title: <input id="edit-song-modal-title-textfield" className='modal-textfield px-2' type="text" defaultValue={title} onChange={handleUpdateTitle} />
+                Title: <input id="edit-song-modal-title-textfield" className='modal-textfield px-2' type="text" value={title} onChange={handleUpdateTitle} readOnly={!isSongOwnedByUser} />
             </Typography>
             <Typography 
                 sx={{color: "#702963", fontWeight:"bold", fontSize:"30px"}} 
                 id="modal-modal-artist" variant="h6" component="h2">
-                Artist: <input id="edit-song-modal-artist-textfield" className='modal-textfield px-2' type="text" defaultValue={artist} onChange={handleUpdateArtist} />
+                Artist: <input id="edit-song-modal-artist-textfield" className='modal-textfield px-2' type="text" value={artist} onChange={handleUpdateArtist} readOnly={!isSongOwnedByUser} />
             </Typography>
             <Typography 
                 sx={{color: "#702963", fontWeight:"bold", fontSize:"30px"}} 
                 id="modal-modal-year" variant="h6" component="h2">
-                Year: <input id="edit-song-modal-year-textfield" className='modal-textfield px-2' type="text" defaultValue={year} onChange={handleUpdateYear} />
+                Year: <input id="edit-song-modal-year-textfield" className='modal-textfield px-2' type="text" value={year} onChange={handleUpdateYear} readOnly={!isSongOwnedByUser} />
             </Typography>
             <Typography 
                 sx={{color: "#702963", fontWeight:"bold", fontSize:"25px"}} 
                 id="modal-modal-youTubeId" variant="h6" component="h2">
-                YouTubeId: <input id="edit-song-modal-youTubeId-textfield" className='modal-textfield px-2' type="text" defaultValue={youTubeId} onChange={handleUpdateYouTubeId} />
+                YouTubeId: <input id="edit-song-modal-youTubeId-textfield" className='modal-textfield px-2' type="text" value={youTubeId} onChange={handleUpdateYouTubeId} readOnly={!isSongOwnedByUser} />
             </Typography>
             <div className='flex gap-4'>
                 <Button 
                     sx={{color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
-                    id="edit-song-confirm-button" onClick={handleConfirmEditSong} className='px-4 py-2'>Confirm</Button>
+                    id="edit-song-confirm-button" onClick={handleConfirmEditSong} className='px-4 py-2' disabled={!isSongOwnedByUser}>Confirm</Button>
                 <Button 
                     sx={{opacity: 0.80, color: "#8932CC", backgroundColor: "#CBC3E3", fontSize: 13, fontWeight: 'bold', border: 2, mt:"20px", px: 5, py: 1}} variant="outlined" 
                     id="edit-song-confirm-button" onClick={handleCancelEditSong}>Cancel</Button>
+            {!isSongOwnedByUser && (
+                <Typography sx={{mt: "10px", color: "#FF0000", fontWeight:"bold"}} id="edit-song-not-allowed">
+                    You do not own this playlist/song and cannot edit it.
+                </Typography>
+            )}
 
             </div>
             </div>

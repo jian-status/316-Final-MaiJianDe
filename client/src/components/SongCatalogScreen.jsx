@@ -102,6 +102,14 @@ function SongCatalogScreen() {
         }
     };
 
+    React.useEffect(() => {
+        const handler = () => {
+            handleSearch();
+        };
+        window.addEventListener('songCatalogChanged', handler);
+        return () => window.removeEventListener('songCatalogChanged', handler);
+    }, [filterList]);
+
     let displaySongs = (songs.data && songs.data.length !== 0) ? songs.data.map((song, idx) =>
         <div onClick={() => handleSongClick(song)} key={song._id || song.id || song.youTubeId || idx}>
             <SongCard song={song} index={idx} id={song._id || song.id || song.youTubeId || idx} />

@@ -1,5 +1,8 @@
 const auth = require('../auth')
-const { db } = require('../index'); // DB instance
+const indexModule = require('../index'); // DB instance
+
+// Helper function to get db instance at runtime
+const getDb = () => indexModule.db;
 
 /*
     This is our back-end API. It provides all the data services
@@ -25,7 +28,7 @@ createPlaylist = async (req, res) => {
     
     try {
         console.log("Creating playlist:", JSON.stringify(body));
-        const user = await db.getUser(req.userId);
+        const user = await getDb().getUser(req.userId);
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -33,7 +36,7 @@ createPlaylist = async (req, res) => {
             });
         }
 
-        const playlist = await db.createPlaylist(body);
+        const playlist = await getDb().createPlaylist(body);
         
         return res.status(201).json({
             playlist: playlist
@@ -55,7 +58,7 @@ deletePlaylist = async (req, res) => {
     try {
         console.log("delete Playlist with id:", JSON.stringify(req.params.id));
         
-        const playlist = await db.getPlaylist(req.params.id);
+        const playlist = await getDb().getPlaylist(req.params.id);
         if (!playlist) {
             console.log("deletePlaylist, playlist not found - might already be deleted");
             return res.status(200).json({
@@ -65,7 +68,7 @@ deletePlaylist = async (req, res) => {
         
         console.log("pdeletePlaylist, laylist found: " + JSON.stringify(playlist));
         
-        const user = await db.getUserByEmail(playlist.ownerEmail);
+        const user = await getDb().getUserByEmail(playlist.ownerEmail);
         if (!user) {
             return res.status(400).json({
                 errorMessage: 'deletePlaylist, Could not find user'
@@ -77,7 +80,7 @@ deletePlaylist = async (req, res) => {
         
         if (user._id.toString() == req.userId) {
             console.log("deletePlaylist, correct user!");
-            await db.deletePlaylist(req.params.id);
+            await getDb().deletePlaylist(req.params.id);
             return res.status(200).json({});
         }
         else {
@@ -98,7 +101,7 @@ getPlaylistById = async (req, res) => {
     try {
         console.log("Find Playlist with id:", JSON.stringify(req.params.id));
 
-        const playlist = await db.getPlaylist(req.params.id);
+        const playlist = await getDb().getPlaylist(req.params.id);
         if (!playlist) {
             return res.status(400).json({ 
                 success: false, 
@@ -125,7 +128,7 @@ getPlaylistPairs = async (req, res) => {
     try {
         console.log("getPlaylistPairs: find user with id " + req.userId);
         
-        const user = await db.getUser(req.userId);
+        const user = await getDb().getUser(req.userId);
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -134,7 +137,7 @@ getPlaylistPairs = async (req, res) => {
         }
         
         console.log("getPlaylistPairs, Getting playlists for " + user.email);
-        const playlists = await db.getPlaylistsByOwner(user.email);
+        const playlists = await getDb().getPlaylistsByOwner(user.email);
         
         console.log("Found Playlists: " + JSON.stringify(playlists));
         
@@ -161,7 +164,7 @@ getPlaylistPairs = async (req, res) => {
 }
 getPlaylists = async (req, res) => {
     try {
-        const playlists = await db.getAllPlaylists();
+        const playlists = await getDb().getAllPlaylists();
         return res.status(200).json({ success: true, data: playlists || [] });
     } catch (error) {
         console.error("getPlaylists: Could not get playlists:", error);
@@ -176,9 +179,9 @@ getLoggedInPlaylists = async (req, res) => {
     try {
         const userId = auth.verifyUser(req);
         if (userId) {
-            const user = await db.getUser(userId);
+            const user = await getDb().getUser(userId);
             if (user) {
-                const playlists = await db.getPlaylistsByOwner(user.email);
+                const playlists = await getDb().getPlaylistsByOwner(user.email);
                 return res.status(200).json({ success: true, data: playlists || [] });
             }
         }
@@ -211,7 +214,7 @@ updatePlaylist = async (req, res) => {
     }
 
     try {
-        const playlist = await db.getPlaylist(req.params.id);
+        const playlist = await getDb().getPlaylist(req.params.id);
         if (!playlist) {
             return res.status(404).json({
                 message: 'updatePlaylist: Could not find playlist',
@@ -221,7 +224,7 @@ updatePlaylist = async (req, res) => {
         console.log("updatePlaylist, found playlist: " + JSON.stringify(playlist));
 
         // Check if this playlist belongs to this user
-        const user = await db.getUserByEmail(playlist.ownerEmail);
+        const user = await getDb().getUserByEmail(playlist.ownerEmail);
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -241,7 +244,7 @@ updatePlaylist = async (req, res) => {
                 songs: body.playlist.songs
             };
             
-            const DB_playlist = await db.updatePlaylist(req.params.id, newPlaylist);
+            const DB_playlist = await getDb().updatePlaylist(req.params.id, newPlaylist);
             
             console.log("updatePlaylist: Updated playlist");
             return res.status(200).json({
@@ -270,7 +273,7 @@ updatePlaylist = async (req, res) => {
 getSongsByPlaylist = async (req, res) => {
     try {
         const playlistId = req.params.playlistId;
-        const playlist = await db.getPlaylist(playlistId);
+        const playlist = await getDb().getPlaylist(playlistId);
         if (!playlist) {
             return res.status(404).json({
                 success: false,
@@ -289,7 +292,7 @@ getSongsByPlaylist = async (req, res) => {
 
 getSongCatalog = async (req, res) => {
     try {
-        const songs = await db.filterSongCatalog(req.query);
+        const songs = await getDb().filterSongCatalog(req.query);
         return res.status(200).json({ success: true, songs });
     } catch (error) {
         console.error('filterSongCatalog error:', error);
@@ -299,7 +302,7 @@ getSongCatalog = async (req, res) => {
 
 getAllSongs = async (req, res) => {
     try {
-        const songs = await db.getAllSongs();
+        const songs = await getDb().getAllSongs();
         return res.status(200).json({ success: true, songs });
     } catch (error) {
         console.error('getAllSongs error:', error);
@@ -316,10 +319,24 @@ incrementSongListen = async (req, res) => {
         if (!youTubeId && !(title && artist)) {
             return res.status(400).json({ success: false, error: 'youTubeId or (title and artist) are required' });
         }
-        const updatedSong = await db.incrementSongListen(playlistId, youTubeId, title, artist, year);
+        const updatedSong = await getDb().incrementSongListen(playlistId, youTubeId, title, artist, year);
         return res.status(200).json({ success: true, song: updatedSong });
     } catch (error) {
         console.error('incrementSongListen error:', error);
+        return res.status(400).json({ success: false, error: error.message });
+    }
+}
+
+incrementSongPlaylistCount = async (req, res) => {
+    try {
+        const { youTubeId, title, artist, year } = req.body;
+        if (!youTubeId && !(title && artist)) {
+            return res.status(400).json({ success: false, error: 'youTubeId or (title and artist) are required' });
+        }
+        const updatedSong = await getDb().incrementSongPlaylistCount(youTubeId, title, artist, year);
+        return res.status(200).json({ success: true, song: updatedSong });
+    } catch (error) {
+        console.error('incrementSongPlaylistCount error:', error);
         return res.status(400).json({ success: false, error: error.message });
     }
 }
@@ -335,5 +352,6 @@ module.exports = {
     getSongsByPlaylist,
     getSongCatalog,
     getAllSongs,
-    incrementSongListen
+    incrementSongListen,
+    incrementSongPlaylistCount,
 }

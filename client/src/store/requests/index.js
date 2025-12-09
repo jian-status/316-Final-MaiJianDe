@@ -60,6 +60,14 @@ export const incrementSongListen = (playlistId, youTubeId, title, artist, year) 
         body: JSON.stringify({ playlistId, youTubeId, title, artist, year })
     });
 }
+export const incrementSongPlaylistCount = (youTubeId, title, artist, year) => {
+    return fetch(`http://localhost:4000/store/songs/incrementPlaylistCount`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ youTubeId, title, artist, year })
+    });
+}
 
 const apis = {
     createPlaylist,
@@ -71,6 +79,7 @@ const apis = {
     updatePlaylistById,
     getFilteredSongs
     ,incrementSongListen
+    ,incrementSongPlaylistCount
 }
 
 export default apis
