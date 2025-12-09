@@ -129,7 +129,7 @@ function AuthContextProvider(props) {
                 })
                 // Load the user's playlists after login
                 if (store) store.loadIdNamePairs();
-                navigate("/");
+                navigate("/playlists");
             }
         } catch(error){
             authReducer({
@@ -151,6 +151,30 @@ function AuthContextProvider(props) {
                 payload: null
             })
             navigate("/");
+        }
+    }
+
+    auth.updateUser = async function(username, email, currentPassword, newPassword) {
+        try {
+            const response = await authRequestSender.updateUser(username, email, currentPassword, newPassword);
+            if (response.status === 200) {
+                const data = await response.json();
+                authReducer({
+                    type: AuthActionType.LOGIN_USER, // Reuse login action to update user data
+                    payload: {
+                        user: data.user,
+                        loggedIn: true,
+                        errorMessage: null
+                    }
+                });
+                return { success: true };
+            } else {
+                const errorData = await response.json();
+                return { success: false, error: errorData.errorMessage };
+            }
+        } catch (error) {
+            console.error("Update user error:", error);
+            return { success: false, error: "Update failed" };
         }
     }
 

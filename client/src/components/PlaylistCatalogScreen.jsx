@@ -77,19 +77,19 @@ function PlaylistCatalogScreen() {
             if (data.success) {
                 let filtered = data.data;
                 if (filterList.playlistName) {
-                    filtered = filtered.filter(p => (p.name || "").toLowerCase().includes(filterList.playlistName.toLowerCase()));
+                    filtered = filtered.filter(p => (p.name || "").toLowerCase().startsWith(filterList.playlistName.toLowerCase()));
                 }
                 if (filterList.owner) {
-                    filtered = filtered.filter(p => (p.username || p.ownerEmail || "").toLowerCase().includes(filterList.owner.toLowerCase()));
+                    filtered = filtered.filter(p => (p.owner?.username || "").toLowerCase().startsWith(filterList.owner.toLowerCase()));
                 }
                 if (filterList.songTitle) {
-                    filtered = filtered.filter(p => (p.songs || []).some(song => (song.title || "").toLowerCase().includes(filterList.songTitle.toLowerCase())));
+                    filtered = filtered.filter(p => (p.songs || []).some(song => (song.title || "").toLowerCase().startsWith(filterList.songTitle.toLowerCase())));
                 }
                 if (filterList.songArtist) {
-                    filtered = filtered.filter(p => (p.songs || []).some(song => (song.artist || "").toLowerCase().includes(filterList.songArtist.toLowerCase())));
+                    filtered = filtered.filter(p => (p.songs || []).some(song => (song.artist || "").toLowerCase().startsWith(filterList.songArtist.toLowerCase())));
                 }
                 if (filterList.songYear) {
-                    filtered = filtered.filter(p => (p.songs || []).some(song => String(song.year || "").includes(filterList.songYear)));
+                    filtered = filtered.filter(p => (p.songs || []).some(song => String(song.year || "").startsWith(filterList.songYear)));
                 }
                 dispatchPlaylists({ type: 'SET_PLAYLISTS', payload: filtered });
             } else {
@@ -134,7 +134,7 @@ function PlaylistCatalogScreen() {
             <div key={playlist._id}>
                 <PlaylistCard
                     key={playlist._id}
-                    idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.username }}
+                    idNamePair={{ _id: playlist._id, name: playlist.name, username: playlist.owner?.username }}
                     onPlay={(id) => { setPendingPlayId(id); store.loadPlaylistForModal(id); }}
                 />
             </div>
@@ -218,9 +218,11 @@ function PlaylistCatalogScreen() {
                         </div>
                     </div>
                 )}
-                <button className='bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 w-32 text-white font-bold' onClick={handlePlaylistCreation}>
-                    New Playlist
-                </button>
+                {auth && auth.loggedIn && (
+                    <button className='bg-purple-600 hover:bg-purple-500 rounded px-4 py-2 w-32 text-white font-bold' onClick={handlePlaylistCreation}>
+                        New Playlist
+                    </button>
+                )}
             </div>
             <MUIDeleteModal />
             {showPlayModal && <PlayModal onClose={() => { setShowPlayModal(false); store.clearCurrentList(); setPendingPlayId(null); }} />}

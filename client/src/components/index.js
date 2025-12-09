@@ -1,4 +1,6 @@
 import AppBanner from './AppBanner'
+import EditAccountModal from './EditAccountModal'
+import EditAccountScreen from './EditAccountScreen'
 import EditToolbar from './EditToolbar'
 import HomeScreen from './HomeScreen'
 import HomeWrapper from './HomeWrapper'
@@ -14,6 +16,7 @@ import SongCard from './SongCard'
 import PlaylistCatalogScreen from './PlaylistCatalogScreen'
 import SplashScreen from './SplashScreen'
 import Statusbar from './Statusbar'
+import WelcomeScreen from './WelcomeScreen'
 import WorkspaceScreen from './WorkspaceScreen'
 import SongCatalogScreen from './SongCatalogScreen'
 /*
@@ -23,7 +26,9 @@ import SongCatalogScreen from './SongCatalogScreen'
     @author McKilla Gorilla
 */
 export { 
-    AppBanner,  
+    AppBanner,
+    EditAccountModal,
+    EditAccountScreen,
     EditToolbar, 
     HomeScreen,
     HomeWrapper,
@@ -38,6 +43,7 @@ export {
     RegisterScreen,
     SplashScreen,
     Statusbar, 
+    WelcomeScreen,
     WorkspaceScreen,
     SongCatalogScreen,
     PlaylistCatalogScreen,

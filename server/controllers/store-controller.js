@@ -133,11 +133,15 @@ getPlaylistPairs = async (req, res) => {
             for (let playlist of playlists) {
                 let pair = {
                     _id: playlist._id,
-                    name: playlist.name
+                    name: playlist.name,
+                    username: user.username,
+                    updatedAt: playlist.updatedAt
                 };
                 pairs.push(pair);
             }
         }
+        // Sort playlists by last used
+        pairs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
         return res.status(200).json({ success: true, idNamePairs: pairs });
         
     } catch (error) {

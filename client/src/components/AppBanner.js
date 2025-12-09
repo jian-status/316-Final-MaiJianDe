@@ -1,9 +1,10 @@
 import { useContext, useState } from 'react';
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AuthContext from '../auth';
 import { GlobalStoreContext } from '../store'
 
 import EditToolbar from './EditToolbar'
+import EditAccountModal from './EditAccountModal'
 
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import AppBar from '@mui/material/AppBar';
@@ -16,6 +17,7 @@ import Typography from '@mui/material/Typography';
 export default function AppBanner() {
     const { auth } = useContext(AuthContext);
     const { store } = useContext(GlobalStoreContext);
+    const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState(null);
     const isMenuOpen = Boolean(anchorEl);
 
@@ -32,8 +34,18 @@ export default function AppBanner() {
         auth.logoutUser();
     }
 
+    const handleEditAccount = () => {
+        handleMenuClose();
+        navigate('/edit-account/');
+    }
+
     const handleHouseClick = () => {
         store.closeCurrentList();
+        if (auth.loggedIn) {
+            navigate('/playlists');
+        } else {
+            navigate('/');
+        }
     }
 
     const menuId = 'primary-search-account-menu';
@@ -73,6 +85,7 @@ export default function AppBanner() {
             open={isMenuOpen}
             onClose={handleMenuClose}
         >
+            <MenuItem onClick={handleEditAccount}>Edit Account</MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>        
 
@@ -103,10 +116,10 @@ export default function AppBanner() {
                         component="div"
                         sx={{ display: { xs: 'none', sm: 'block' } }}                        
                     >
-                        <Link onClick={handleHouseClick} style={{ textDecoration: 'none', color: 'white' }} to='/'>⌂</Link>
+                        <span onClick={handleHouseClick} style={{ textDecoration: 'none', color: 'white', cursor: 'pointer' }}>⌂</span>
                     </Typography>
                     <Link to='/SongCatalogScreen' style={{ textDecoration: 'none', color: 'white', marginLeft: '20px' }}>Song Catalog</Link>
-                    <Link to='/' style={{ textDecoration: 'none', color: 'white', marginLeft: '20px' }}>Playlist Catalog</Link>
+                    <Link to='/playlists' style={{ textDecoration: 'none', color: 'white', marginLeft: '20px' }}>Playlist Catalog</Link>
 
                     <Box sx={{ flexGrow: 1 }}>{editToolbar}</Box>
                     <Box sx={{ height: "90px", display: { xs: 'none', md: 'flex' } }}>

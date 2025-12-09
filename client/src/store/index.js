@@ -356,7 +356,7 @@ function GlobalStoreContextProvider(props) {
         });
         tps.clearAllTransactions();
         setStore(prev => ({ ...prev, isNewPlaylist: false, isEditingPlaylist: false }));
-        navigate("/");
+        navigate("/playlists");
     }
 
     // THIS FUNCTION CLEARS ALL STORE DATA (for user logout/login)

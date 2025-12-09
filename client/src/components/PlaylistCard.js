@@ -116,7 +116,9 @@ function PlaylistCard(props) {
             <div>
                 {
                     expandSongs && playlist && Array.isArray(playlist.songs) && playlist.songs.map((song, index) => (
-                        <p key={song._id || song.id || song.youTubeId || index}>{index + 1}. {song.title}</p>)
+                        <p key={song._id || song.id || song.youTubeId || index}>
+                            {index + 1}. {song.title} by {song.artist}{song.year ? ` (${song.year})` : ''}
+                        </p>)
                     )
                 }
 

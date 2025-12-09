@@ -5,10 +5,12 @@ import { AuthContextProvider } from './auth';
 import { GlobalStoreContextProvider } from './store'
 import {
     AppBanner,
+    EditAccountScreen,
     HomeWrapper,
     LoginScreen,
     RegisterScreen,
     Statusbar,
+    WelcomeScreen,
     WorkspaceScreen,
     SongCatalogScreen,
     PlaylistCatalogScreen,
@@ -26,12 +28,14 @@ const App = () => {
                 <GlobalStoreContextProvider>              
                     <AppBanner />
                     <Routes>
-                        <Route path="/" element={<PlaylistCatalogScreen />} />
+                        <Route path="/" element={<WelcomeScreen />} />
                         <Route path="/login/" element={<LoginScreen />} />
                         <Route path="/register/" element={<RegisterScreen />} />
+                        <Route path="/edit-account/" element={<EditAccountScreen />} />
                         <Route path="/playlist/:id" element={<WorkspaceScreen />} />
                         <Route path="/SongCatalogScreen" element={<SongCatalogScreen />} />
-                        <Route path="/playlists" element={<HomeWrapper />} />
+                        <Route path="/playlists" element={<PlaylistCatalogScreen />} />
+                        <Route path="/home" element={<HomeWrapper />} />
                     </Routes>
                     <Statusbar />
                 </GlobalStoreContextProvider>

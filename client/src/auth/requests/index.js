@@ -45,12 +45,28 @@ export const registerUser = (username, email, password, passwordVerify) => {
             passwordVerify : passwordVerify
         })
     })}
+export const updateUser = (username, email, currentPassword, newPassword) => {
+    return fetch('http://localhost:4000/auth/update/', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            username: username,
+            email: email,
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        })
+    })
+}
 
 const apis = {
     getLoggedIn,
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    updateUser
 }
 
 export default apis

@@ -152,9 +152,77 @@ registerUser = async (req, res) => {
     }
 }
 
+updateUser = async (req, res) => {
+    try {
+        const userId = auth.verifyUser(req);
+        if (!userId) {
+            return res.status(401).json({ errorMessage: "Not authenticated" });
+        }
+
+        const { username, email, currentPassword, newPassword } = req.body;
+
+        const currentUser = await getDb().getUser(userId);
+        if (!currentUser) {
+            return res.status(404).json({ errorMessage: "User not found" });
+        }
+
+        if (newPassword) {
+            if (!currentPassword) {
+                return res.status(400).json({ errorMessage: "Current password required to change password" });
+            }
+
+            const passwordCorrect = await bcrypt.compare(currentPassword, currentUser.passwordHash);
+            if (!passwordCorrect) {
+                return res.status(400).json({ errorMessage: "Current password is incorrect" });
+            }
+        }
+
+        if (email && email !== currentUser.email) {
+            const existingUser = await getDb().getUserByEmail(email);
+            if (existingUser && existingUser._id !== userId) {
+                return res.status(400).json({ errorMessage: "Email already in use" });
+            }
+        }
+
+        const updateData = {};
+        if (username && username !== currentUser.username) {
+            updateData.username = username;
+        }
+        if (email && email !== currentUser.email) {
+            updateData.email = email;
+        }
+        if (newPassword) {
+            const saltRounds = 10;
+            const salt = await bcrypt.genSalt(saltRounds);
+            updateData.passwordHash = await bcrypt.hash(newPassword, salt);
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ errorMessage: "No changes to update" });
+        }
+
+        await getDb().updateUser(userId, updateData);
+
+        const updatedUser = await getDb().getUser(userId);
+
+        res.status(200).json({
+            success: true,
+            user: {
+                username: updatedUser.username,
+                email: updatedUser.email
+            }
+        });
+
+    } catch (err) {
+        console.error("updateUser error:", err);
+        res.status(500).json({ errorMessage: "Internal server error" });
+    }
+}
+
 module.exports = {
     getLoggedIn,
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    updateUser
 }

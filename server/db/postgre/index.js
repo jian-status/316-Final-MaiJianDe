@@ -123,6 +123,13 @@ Song.belongsTo(Playlist, {
   foreignKey: 'playlistId' 
 });
 
+// Playlist-User association
+Playlist.belongsTo(User, {
+  foreignKey: 'ownerEmail',
+  targetKey: 'email',
+  as: 'owner'
+});
+
 module.exports = { sequelize };
 
 async function authenticate() {
@@ -313,6 +320,10 @@ class PostgresManager extends DatabaseManager {
         include: [{
           model: Song,
           as: 'songs'
+        }, {
+          model: User,
+          as: 'owner',
+          attributes: ['username', 'email']
         }]
       });
       playlists.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
@@ -597,6 +608,10 @@ class PostgresManager extends DatabaseManager {
         include: [{
           model: Song,
           as: 'songs'
+        }, {
+          model: User,
+          as: 'owner',
+          attributes: ['username', 'email']
         }]
       });
       playlists.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
