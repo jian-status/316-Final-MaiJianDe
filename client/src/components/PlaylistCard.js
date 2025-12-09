@@ -21,12 +21,10 @@ function PlaylistCard(props) {
     const { auth } = useContext(AuthContext);
     
     const fetchPlaylist = () => {
-        console.log(`PlaylistCard: Fetching playlist ${idNamePair._id} (${idNamePair.name})`);
         getPlaylistById(idNamePair._id)
             .then((res) => res.json())
             .then((data) => {
                 if (data && data.success && data.playlist) {
-                    console.log(`PlaylistCard: Received playlist ${idNamePair.name}, first song count:`, data.playlist.songs?.[0]?.playlistCount);
                     setPlaylist(data.playlist);
                 } else {
                     setPlaylist(null);
@@ -34,35 +32,27 @@ function PlaylistCard(props) {
             })
             .catch((err) => {
                 setPlaylist(null);
-                console.log(err);
             });
     };
     
     useEffect(() => {
-        console.log(`PlaylistCard ${idNamePair.name}: Setting up effect`);
         fetchPlaylist();
         
         // Listen for song catalog changes to refresh playlist data
         const handler = () => {
-            console.log(`PlaylistCard ${idNamePair.name}: Received songCatalogChanged event`);
             fetchPlaylist();
         };
         window.addEventListener('songCatalogChanged', handler);
         return () => {
-            console.log(`PlaylistCard ${idNamePair.name}: Cleaning up event listener`);
             window.removeEventListener('songCatalogChanged', handler);
         };
     }, [idNamePair._id]);
     function handleLoadList(event, id) {
-        console.log("handleLoadList for " + id);
         if (!event.target.disabled) {
             let _id = event.target.id;
             if (_id.indexOf('list-card-text-') >= 0)
                 _id = ("" + _id).substring("list-card-text-".length);
 
-            console.log("load " + event.target.id);
-
-            // CHANGE THE CURRENT LIST
             store.setCurrentList(id);
         }
     }
@@ -77,7 +67,6 @@ function PlaylistCard(props) {
     function handleUpdateText(event) {
         setText(event.target.value);
     }
-    // handled by parent (invoke props.onPlay)
     function handleCopy(event) {
         event.stopPropagation();
         const toCopy = playlist ? JSON.parse(JSON.stringify(playlist)) : (store.currentList ? JSON.parse(JSON.stringify(store.currentList)) : null);
@@ -85,8 +74,6 @@ function PlaylistCard(props) {
             console.error("No playlist available to copy");
             return;
         }
-        console.log("handleCopy - toCopy:", toCopy);
-        console.log("handleCopy - toCopy.songs:", toCopy.songs);
         store.createNewListFromCopy(idNamePair.name + ` Copy_${new Date().getTime()}`, toCopy.songs || [], toCopy.ownerEmail || null);
     }
     const isMyPlaylist = playlist && auth && auth.user && playlist.ownerEmail === auth.user.email;

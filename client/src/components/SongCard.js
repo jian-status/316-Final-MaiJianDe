@@ -6,6 +6,7 @@ import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 
 function SongCard(props) {
     const { store } = useContext(GlobalStoreContext);
@@ -13,8 +14,11 @@ function SongCard(props) {
     const { song, index, isEditable = false, id: propId } = props;
     const [playlistCountVal, setPlaylistCountVal] = useState(song.playlistCount || 0);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [submenuAnchorEl, setSubmenuAnchorEl] = useState(null);
     const menuOpen = Boolean(anchorEl);
+    const submenuOpen = Boolean(submenuAnchorEl);
     const handleOpenMenu = (e) => {
+        e.stopPropagation();
         setAnchorEl(e.currentTarget);
         // ensure user's playlists are loaded
         if (store && (!store.idNamePairs || store.idNamePairs.length === 0)) {
@@ -22,8 +26,14 @@ function SongCard(props) {
         }
     };
     const handleCloseMenu = () => setAnchorEl(null);
+    const handleOpenSubmenu = (event) => setSubmenuAnchorEl(event.currentTarget);
+    const handleCloseSubmenu = () => setSubmenuAnchorEl(null);
+    const handleCloseAllMenus = () => {
+        setAnchorEl(null);
+        setSubmenuAnchorEl(null);
+    };
     const handleAddToPlaylist = async (playlistId) => {
-        handleCloseMenu();
+        handleCloseAllMenus();
         if (!auth || !auth.loggedIn) {
             console.error('User must be logged in to add to playlist');
             return;
@@ -31,7 +41,6 @@ function SongCard(props) {
         const songToAdd = { title: song.title, artist: song.artist, year: song.year, youTubeId: song.youTubeId };
         const result = await store.addSongToPlaylist(playlistId, songToAdd);
         if (result && result.success) {
-            console.log('Added song to playlist', playlistId);
             if (result.playlistCount !== undefined) {
                 setPlaylistCountVal(result.playlistCount);
             } else {
@@ -66,7 +75,6 @@ function SongCard(props) {
         // UPDATE THE LIST
         store.addMoveSongTransaction(sourceIndex, targetIndex);
     }
-    // Debugging: compute emails and ownership
     const userEmail = auth && auth.user && auth.user.email ? auth.user.email.trim().toLowerCase() : '';
     const songOwnerEmail = (song && song.ownerEmail) ? song.ownerEmail.trim().toLowerCase() : '';
     const isSongOwnedByUser = Boolean(userEmail && songOwnerEmail && songOwnerEmail === userEmail);
@@ -93,13 +101,24 @@ function SongCard(props) {
             console.warn('User does not own this playlist/song; edit not allowed');
             return;
         }
+        handleCloseAllMenus();
         store.showEditSongModal(index, song);
     }
+    function handleRemoveFromCatalog() {
+        if (!auth || !auth.loggedIn) {
+            console.error("Must be logged in to remove a song from catalog.");
+            return;
+        }
+        if (!isSongOwnedByUser) {
+            console.warn('User does not own this song; remove from catalog not allowed');
+            return;
+        }
+        handleCloseAllMenus();
+        store.showDeleteSongModal(song, isEditable ? index : null);
+    }
     function handleClick(event) {
-        console.log("clicking on song card " + index);
         // DOUBLE CLICK IS FOR SONG EDITING
         if (event.detail === 2) {
-            console.log("double clicked");
             if (!isSongOwnedByUser) {
                 console.warn('User does not own this playlist/song; edit not allowed');
                 return;
@@ -121,40 +140,54 @@ function SongCard(props) {
             onDrop={isEditable ? handleDrop : null}
             draggable={isEditable}
             onClick={isEditable ? handleClick : null}
-        >
-            {isEditable ? '' : index + 1 + '. '}
-            <a
-                id={propId ? `${propId}-link` : 'song-' + (song._id || song.id || song.youTubeId || index) + '-link'}
-                className="song-link"
-                href={"https://www.youtube.com/watch?v=" + song.youTubeId}>
-                {song.title} ({song.year}) by {song.artist}
-            </a>
+        >   
+            <div className='flex justify-between items-center'>
+            <div>
+                {isEditable ? '' : index + 1 + '. '}
+                <a
+                    id={propId ? `${propId}-link` : 'song-' + (song._id || song.id || song.youTubeId || index) + '-link'}
+                    className="song-link"
+                    href={"https://www.youtube.com/watch?v=" + song.youTubeId}>
+                    {song.title} ({song.year}) by {song.artist}
+                </a>
+            </div>
             {auth && auth.loggedIn && (
                 <div className='flex gap-2'>
-                    {isEditable === true && isSongOwnedByUser === true && (
-                        <div className='flex gap-2'>
-                        <Button
-                            sx={{transform:"translate(-5%, -5%)", width:"5px", height:"30px"}}
-                            variant="contained"
-                            id={"remove-song-" + index}
-                            className="list-card-button"
-                            onClick={handleRemoveSong}>{"\u2715"}</Button>
-                        <Button
-                            sx={{transform:"translate(-5%, -5%)", height:"30px"}}
-                            variant="outlined"
-                            id={"edit-song-" + index}
-                            className="list-card-button"
-                            onClick={handleEditSong}>Edit</Button>
-                        </div>
-                    )}
                     <IconButton aria-label='more' onClick={handleOpenMenu} size='small'>
                         <MoreVertIcon />
                     </IconButton>
                     <Menu
-                        id="song-add-menu"
+                        id="song-main-menu"
                         anchorEl={anchorEl}
                         open={menuOpen}
-                        onClose={handleCloseMenu}
+                        onClose={handleCloseAllMenus}
+                    >
+                        <MenuItem onClick={handleOpenSubmenu}>
+                            Add to Playlist
+                            <KeyboardArrowRightIcon style={{ marginLeft: 'auto' }} />
+                        </MenuItem>
+                        {isSongOwnedByUser && (
+                            <MenuItem onClick={handleEditSong}>Edit Song</MenuItem>
+                        )}
+                        {isSongOwnedByUser && (
+                            <MenuItem onClick={handleRemoveFromCatalog}>
+                                {isEditable ? 'Remove from Playlist' : 'Remove from Catalog'}
+                            </MenuItem>
+                        )}
+                    </Menu>
+                    <Menu
+                        id="song-playlist-submenu"
+                        anchorEl={submenuAnchorEl}
+                        open={submenuOpen}
+                        onClose={handleCloseAllMenus}
+                        anchorOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'left',
+                        }}
                     >
                         {store && store.idNamePairs && store.idNamePairs.length > 0 ? store.idNamePairs.map((pair) => (
                             <MenuItem key={pair._id} onClick={() => handleAddToPlaylist(pair._id)}>{pair.name}</MenuItem>
@@ -164,6 +197,7 @@ function SongCard(props) {
                     </Menu>
                 </div>
             )}
+            </div>
             
             <div className='flex justify-between text-sm'>
                 <p>Listens: {song.listens}</p>

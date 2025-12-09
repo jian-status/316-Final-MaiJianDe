@@ -50,7 +50,6 @@ loginUser = async (req, res) => {
                 })
         }
 
-        console.log("provided password: " + password);
         const passwordCorrect = await bcrypt.compare(password, existingUser.passwordHash);
         if (!passwordCorrect) {
             return res
@@ -62,7 +61,6 @@ loginUser = async (req, res) => {
 
         // LOGIN THE USER
         const token = auth.signToken(existingUser._id);
-        console.log(token);
 
         res.cookie("token", token, {
             httpOnly: true,
@@ -92,16 +90,13 @@ logoutUser = async (req, res) => {
 }
 
 registerUser = async (req, res) => {
-    console.log("REGISTERING USER IN BACKEND");
     try {
         const { username, email, password, passwordVerify } = req.body;
-        console.log("create user: " + username + " " + email + " " + password + " " + passwordVerify);
         if (!username || !email || !password || !passwordVerify) {
             return res
                 .status(400)
                 .json({ errorMessage: "Please enter all required fields." });
         }
-        console.log("all fields provided");
         if (password.length < 8) {
             return res
                 .status(400)
@@ -109,7 +104,6 @@ registerUser = async (req, res) => {
                     errorMessage: "Please enter a password of at least 8 characters."
                 });
         }
-        console.log("password long enough");
         if (password !== passwordVerify) {
             return res
                 .status(400)
@@ -117,9 +111,7 @@ registerUser = async (req, res) => {
                     errorMessage: "Please enter the same password twice."
                 })
         }
-        console.log("password and password verify match");
         const existingUser = await getDb().getUserByEmail(email);
-        console.log("existingUser: " + existingUser);
         if (existingUser) {
             return res
                 .status(400)
@@ -132,7 +124,6 @@ registerUser = async (req, res) => {
         const saltRounds = 10;
         const salt = await bcrypt.genSalt(saltRounds);
         const passwordHash = await bcrypt.hash(password, salt);
-        console.log("passwordHash: " + passwordHash);
 
         const savedUser = await getDb().createUser({username, email, passwordHash});
         console.log("new user saved: " + savedUser._id);

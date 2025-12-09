@@ -19,7 +19,6 @@ function Statusbar() {
 
     function handleKeyPress(event) {
         if (event.code === "Enter" && store.currentList && listName !== store.currentList.name) {
-            console.log(store.idNamePairs)
             const usingListNames = (store.idNamePairs || []).map(pair => pair.name)
             if (listName.trim() === '') {
                 setErrorMessage('Playlist name cannot be empty.');

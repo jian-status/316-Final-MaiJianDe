@@ -1,8 +1,10 @@
 import { useContext, useEffect } from 'react'
 import { GlobalStoreContext } from '../store'
+import AuthContext from '../auth'
 import PlaylistCard from './PlaylistCard.js'
 import WorkspaceScreen from './WorkspaceScreen'
 import MUIDeleteModal from './MUIDeleteModal'
+import MUIDeleteSongModal from './MUIDeleteSongModal'
 
 import AddIcon from '@mui/icons-material/Add';
 import Fab from '@mui/material/Fab'
@@ -16,6 +18,7 @@ import Box from '@mui/material/Box'
 */
 const HomeScreen = () => {
     const { store } = useContext(GlobalStoreContext);
+    const { auth } = useContext(AuthContext);
 
     useEffect(() => {
         store.loadIdNamePairs();
@@ -42,14 +45,16 @@ const HomeScreen = () => {
                     );
                 })
             }
-            <Fab sx={{transform:"translate(1150%, 10%)"}}
-                color="primary" 
-                aria-label="add"
-                id="add-list-button"
-                onClick={handleCreateNewList}
-            >
-                <AddIcon />
-            </Fab>
+            {auth && auth.loggedIn && (
+                <Fab sx={{transform:"translate(1150%, 10%)"}}
+                    color="primary" 
+                    aria-label="add"
+                    id="add-list-button"
+                    onClick={handleCreateNewList}
+                >
+                    <AddIcon />
+                </Fab>
+            )}
             </List>;
     }
     if (store && store.currentList) {
@@ -63,14 +68,16 @@ const HomeScreen = () => {
     return (
         <div id="playlist-selector">
             <div id="list-selector-heading">
-            <Fab sx={{transform:"translate(-20%, 0%)"}}
-                color="primary" 
-                aria-label="add"
-                id="add-list-button"
-                onClick={handleCreateNewList}
-            >
-                <AddIcon />
-            </Fab>
+            {auth && auth.loggedIn && (
+                <Fab sx={{transform:"translate(-20%, 0%)"}}
+                    color="primary" 
+                    aria-label="add"
+                    id="add-list-button"
+                    onClick={handleCreateNewList}
+                >
+                    <AddIcon />
+                </Fab>
+            )}
                 Your Playlists
             </div>
             <Box sx={{bgcolor:"background.paper"}} id="list-selector-list">
@@ -78,6 +85,7 @@ const HomeScreen = () => {
                     listCard
                 }
                 <MUIDeleteModal />
+                <MUIDeleteSongModal />
             </Box>
         </div>)
 }

@@ -1,5 +1,8 @@
-import React, { useReducer } from 'react';
+import React, { useReducer, useContext } from 'react';
 import SongCard from './SongCard';
+import MUIDeleteSongModal from './MUIDeleteSongModal';
+import { GlobalStoreContext } from '../store';
+import AuthContext from '../auth';
 
 const handleSongClick = (song) => {
 }
@@ -34,8 +37,10 @@ const sortSongsReducer = (state, action) => {
             case 'SORT_BY_listensLoHi':
                 return sorted.sort((a, b) => (a.listens || 0) - (b.listens || 0));
             case 'SORT_BY_playlistCountHiLo':
+                console.log('Sorting by playlistCount Hi-Lo, data:', data.map(s => ({title: s.title, playlistCount: s.playlistCount})));
                 return sorted.sort((a, b) => (b.playlistCount || 0) - (a.playlistCount || 0));
             case 'SORT_BY_playlistCountLoHi':
+                console.log('Sorting by playlistCount Lo-Hi, data:', data.map(s => ({title: s.title, playlistCount: s.playlistCount})));
                 return sorted.sort((a, b) => (a.playlistCount || 0) - (b.playlistCount || 0));
             case 'SORT_BY_songArtist':
                 return sorted.sort((a, b) => (a.artist || '').localeCompare(b.artist || ''));
@@ -50,19 +55,20 @@ const sortSongsReducer = (state, action) => {
     switch (action.type) {
         case 'SET_SONGS':
             return { ...state, data: sortData(action.payload, state.sortBy) };
-        case 'SORT_BY_listensHiLo':
-        case 'SORT_BY_listensLoHi':
         case 'SORT_BY_playlistCountHiLo':
         case 'SORT_BY_playlistCountLoHi':
         case 'SORT_BY_songArtist':
         case 'SORT_BY_songYear':
         case 'SORT_BY_songTitle':
+            console.log('Sort reducer called with type:', action.type);
             return { ...state, sortBy: action.type, data: sortData(state.data, action.type) };
         default:
             return state;
     }
 }
 function SongCatalogScreen() {
+    const { store } = useContext(GlobalStoreContext);
+    const { auth } = useContext(AuthContext);
     const [songs, dispatchSongs] = useReducer(sortSongsReducer, { data: null, sortBy: 'SORT_BY_songTitle' });
     const [filterList, dispatchFilterList] = useReducer(filterListReducer, { 
         title: '',
@@ -203,10 +209,13 @@ function SongCatalogScreen() {
                         <div className="overflow-y-auto max-h-[55vh] mt-4 flex flex-col gap-2">
                             { displaySongs }
                         </div>
-                        <button>Add Song</button>
+                        {auth && auth.loggedIn && (
+                            <button>Add Song</button>
+                        )}
                     </div>
                 )}
             </div>
+            <MUIDeleteSongModal />
         </div>
     );
 }

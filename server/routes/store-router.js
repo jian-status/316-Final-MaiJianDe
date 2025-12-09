@@ -24,5 +24,6 @@ router.get('/songs', auth.verify, StoreController.getAllSongs)
 router.get('/songs/getSongCatalog', StoreController.getSongCatalog)
 router.post('/songs/incrementListen', StoreController.incrementSongListen)
 router.post('/songs/incrementPlaylistCount', StoreController.incrementSongPlaylistCount)
+router.delete('/songs', auth.verify, StoreController.deleteSong)
 
 module.exports = router

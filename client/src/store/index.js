@@ -32,6 +32,7 @@ export const GlobalStoreActionType = {
     SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
     EDIT_SONG: "EDIT_SONG",
     REMOVE_SONG: "REMOVE_SONG",
+    DELETE_SONG: "DELETE_SONG",
     HIDE_MODALS: "HIDE_MODALS",
     CLEAR_CURRENT_LIST: "CLEAR_CURRENT_LIST",
     CLEAR_STORE: "CLEAR_STORE"
@@ -45,6 +46,7 @@ const CurrentModal = {
     NONE : "NONE",
     DELETE_LIST : "DELETE_LIST",
     EDIT_SONG : "EDIT_SONG",
+    DELETE_SONG : "DELETE_SONG",
     ERROR : "ERROR"
 }
 
@@ -63,6 +65,7 @@ function GlobalStoreContextProvider(props) {
         listIdMarkedForDeletion: null,
         isNewPlaylist: false,
         listMarkedForDeletion: null,
+        songMarkedForDeletion: null,
         isEditingPlaylist: false
     });
         // Setter for isEditingPlaylist state
@@ -203,6 +206,14 @@ function GlobalStoreContextProvider(props) {
                     listMarkedForDeletion: null
                 });
             }
+            case GlobalStoreActionType.DELETE_SONG: {
+                return setStore(prev => ({
+                    ...prev,
+                    currentModal : CurrentModal.DELETE_SONG,
+                    songMarkedForDeletion: payload.song,
+                    songIndexForRemoval: payload.songIndex !== undefined ? payload.songIndex : null
+                }));
+            }
             case GlobalStoreActionType.REMOVE_SONG: {
                 return setStore({
                     ...store,
@@ -218,18 +229,17 @@ function GlobalStoreContextProvider(props) {
                 });
             }
             case GlobalStoreActionType.HIDE_MODALS: {
-                return setStore({
-                    ...store,
+                return setStore(prev => ({
+                    ...prev,
                     currentModal : CurrentModal.NONE,
-                    idNamePairs: store.idNamePairs,
-                    currentList: store.currentList,
                     currentSongIndex: -1,
                     currentSong: null,
-                    newListCounter: store.newListCounter,
                     listNameActive: false,
                     listIdMarkedForDeletion: null,
-                    listMarkedForDeletion: null
-                });
+                    listMarkedForDeletion: null,
+                    songMarkedForDeletion: null,
+                    songIndexForRemoval: null
+                }));
             }
             case GlobalStoreActionType.CLEAR_CURRENT_LIST: {
                 return setStore({
@@ -398,18 +408,14 @@ function GlobalStoreContextProvider(props) {
             console.error("FAILED TO CREATE A NEW LIST");
         }
     }
-    store.createNewListFromCopy = async function (listName, songs, originalOwnerEmail) {
-        console.log("createNewListFromCopy - listName:", listName);
-        console.log("createNewListFromCopy - songs:", songs);
-        console.log("createNewListFromCopy - songs.length:", songs ? songs.length : 'null/undefined');
+    store.createNewListFromCopy = async function(listName, songs, ownerEmail) {
         const copiedSongs = (songs || []).map(s => {
-            console.log('Copying song:', s.title, 'current playlistCount:', s.playlistCount);
             return {
                 title: s.title,
                 artist: s.artist,
                 year: s.year,
                 youTubeId: s.youTubeId,
-                ownerEmail: s.ownerEmail || originalOwnerEmail || ''
+                ownerEmail: s.ownerEmail || ownerEmail || ''
             };
         });
         const response = await storeRequestSender.createPlaylist(listName, copiedSongs, auth.user.email);
@@ -417,12 +423,9 @@ function GlobalStoreContextProvider(props) {
             const data = await response.json();
             tps.clearAllTransactions();
             
-            // Add a small delay to ensure server-side increments are fully committed
             await new Promise(resolve => setTimeout(resolve, 150));
             
-            // Refresh the playlist pairs to show the new copied playlist in the catalog
             store.loadIdNamePairs();
-            // Notify other components that song catalog counts may have changed
             try {
                 window.dispatchEvent(new Event('songCatalogChanged'));
             } catch (err) {}
@@ -490,6 +493,18 @@ function GlobalStoreContextProvider(props) {
         store.deleteList(store.listIdMarkedForDeletion);
         store.hideModals();
     }
+    store.deleteMarkedSong = async function() {
+        if (store.songMarkedForDeletion) {
+            // If songIndexForRemoval is not null, remove from playlist
+            // Otherwise, delete from entire catalog
+            if (store.songIndexForRemoval !== null && store.songIndexForRemoval !== undefined) {
+                store.addRemoveSongTransaction(store.songMarkedForDeletion, store.songIndexForRemoval);
+            } else {
+                await store.deleteSongFromCatalog(store.songMarkedForDeletion);
+            }
+            store.hideModals();
+        }
+    }
     // THIS FUNCTION SHOWS THE MODAL FOR PROMPTING THE USER
     // TO SEE IF THEY REALLY WANT TO DELETE THE LIST
 
@@ -498,6 +513,12 @@ function GlobalStoreContextProvider(props) {
             type: GlobalStoreActionType.EDIT_SONG,
             payload: {currentSongIndex: songIndex, currentSong: songToEdit}
         });        
+    }
+    store.showDeleteSongModal = (song, songIndex) => {
+        storeReducer({
+            type: GlobalStoreActionType.DELETE_SONG,
+            payload: {song: song, songIndex: songIndex}
+        });
     }
     store.hideModals = () => {
         auth.errorMessage = null;
@@ -511,6 +532,9 @@ function GlobalStoreContextProvider(props) {
     }
     store.isEditSongModalOpen = () => {
         return store.currentModal === CurrentModal.EDIT_SONG;
+    }
+    store.isDeleteSongModalOpen = () => {
+        return store.currentModal === CurrentModal.DELETE_SONG;
     }
     store.isErrorModalOpen = () => {
         return store.currentModal === CurrentModal.ERROR;
@@ -739,6 +763,25 @@ function GlobalStoreContextProvider(props) {
             return { success: false, error: err.message };
         }
     }
+
+    store.deleteSongFromCatalog = async function(song) {
+        try {
+            const response = await storeRequestSender.deleteSong(song.youTubeId, song.title, song.artist, song.year);
+            if (response.status === 200) {
+                const data = await response.json();
+                if (data.success) {
+                    // Notify catalogs to refresh
+                    try { window.dispatchEvent(new Event('songCatalogChanged')); } catch (err) {}
+                    return { success: true };
+                }
+            }
+            return { success: false };
+        } catch (err) {
+            console.error('deleteSongFromCatalog error:', err);
+            return { success: false, error: err.message };
+        }
+    }
+
     store.addUpdateSongTransaction = function (index, newSongData) {
         let song = store.currentList.songs[index];
         let oldSongData = {

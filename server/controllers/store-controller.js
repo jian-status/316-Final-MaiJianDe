@@ -18,7 +18,6 @@ createPlaylist = async (req, res) => {
         })
     }
     const body = req.body;
-    console.log("createPlaylist body: ", JSON.stringify(body));
     if (!body) {
         return res.status(400).json({
             success: false,
@@ -27,7 +26,6 @@ createPlaylist = async (req, res) => {
     }
     
     try {
-        console.log("Creating playlist:", JSON.stringify(body));
         const user = await getDb().getUser(req.userId);
         if (!user) {
             return res.status(400).json({
@@ -56,17 +54,14 @@ deletePlaylist = async (req, res) => {
     }
     
     try {
-        console.log("delete Playlist with id:", JSON.stringify(req.params.id));
         
         const playlist = await getDb().getPlaylist(req.params.id);
         if (!playlist) {
-            console.log("deletePlaylist, playlist not found - might already be deleted");
             return res.status(200).json({
                 message: 'Playlist not found or already deleted'
             });
         }
         
-        console.log("pdeletePlaylist, laylist found: " + JSON.stringify(playlist));
         
         const user = await getDb().getUserByEmail(playlist.ownerEmail);
         if (!user) {
@@ -75,16 +70,12 @@ deletePlaylist = async (req, res) => {
             });
         }
         
-        console.log("deletePlaylist, user._id: " + user._id);
-        console.log("deletePlaylist, req.userId: " + req.userId);
         
         if (user._id.toString() == req.userId) {
-            console.log("deletePlaylist, correct user!");
             await getDb().deletePlaylist(req.params.id);
             return res.status(200).json({});
         }
         else {
-            console.log("deletePlaylist, incorrect user!");
             return res.status(400).json({ 
                 errorMessage: "authentication error" 
             });
@@ -99,7 +90,6 @@ deletePlaylist = async (req, res) => {
 }
 getPlaylistById = async (req, res) => {
     try {
-        console.log("Find Playlist with id:", JSON.stringify(req.params.id));
 
         const playlist = await getDb().getPlaylist(req.params.id);
         if (!playlist) {
@@ -108,7 +98,6 @@ getPlaylistById = async (req, res) => {
                 error: 'getPlaylistById, Could not find playlist' 
             });
         }
-        console.log("Found list: " + JSON.stringify(playlist));
         return res.status(200).json({ success: true, playlist: playlist });
     } catch (error) {
         console.error("getPlaylistById: Could not get playlist:", error);
@@ -126,7 +115,6 @@ getPlaylistPairs = async (req, res) => {
     }
     
     try {
-        console.log("getPlaylistPairs: find user with id " + req.userId);
         
         const user = await getDb().getUser(req.userId);
         if (!user) {
@@ -136,10 +124,8 @@ getPlaylistPairs = async (req, res) => {
             });
         }
         
-        console.log("getPlaylistPairs, Getting playlists for " + user.email);
         const playlists = await getDb().getPlaylistsByOwner(user.email);
         
-        console.log("Found Playlists: " + JSON.stringify(playlists));
         
         // PUT ALL THE LISTS INTO ID, NAME PAIRS
         let pairs = [];
@@ -203,8 +189,6 @@ updatePlaylist = async (req, res) => {
     }
     
     const body = req.body
-    console.log("updatePlaylist: " + JSON.stringify(body));
-    console.log("updatePlaylist, req.body.name: " + req.body.name);
 
     if (!body) {
         return res.status(400).json({
@@ -221,7 +205,6 @@ updatePlaylist = async (req, res) => {
             });
         }
         
-        console.log("updatePlaylist, found playlist: " + JSON.stringify(playlist));
 
         // Check if this playlist belongs to this user
         const user = await getDb().getUserByEmail(playlist.ownerEmail);
@@ -231,13 +214,9 @@ updatePlaylist = async (req, res) => {
                 description: 'updatePlaylist: Could not find user'
             });
         }
-        
-        console.log("updatePlaylist, user._id: " + user._id);
-        console.log("updatePlaylist, req.userId: " + req.userId);
-        
+                
         if (user._id.toString() == req.userId) {
-            console.log("updatePlaylist, correct user!");
-            console.log("updatePlaylist, req.body.name: " + req.body.name);
+            
 
             const newPlaylist = {
                 name: body.playlist.name,
@@ -246,7 +225,6 @@ updatePlaylist = async (req, res) => {
             
             const DB_playlist = await getDb().updatePlaylist(req.params.id, newPlaylist);
             
-            console.log("updatePlaylist: Updated playlist");
             return res.status(200).json({
                 success: true,
                 id: DB_playlist._id,
@@ -255,7 +233,6 @@ updatePlaylist = async (req, res) => {
 
         }
         else {
-            console.log("updatePlaylist, incorrect user!");
             return res.status(400).json({ 
                 success: false, 
                 description: "authentication error" 
@@ -341,6 +318,25 @@ incrementSongPlaylistCount = async (req, res) => {
     }
 }
 
+deleteSong = async (req, res) => {
+    if(auth.verifyUser(req) === null){
+        return res.status(400).json({
+            errorMessage: 'Could not authorize'
+        })
+    }
+    try {
+        const { youTubeId, title, artist, year } = req.body;
+        if (!youTubeId && !(title && artist)) {
+            return res.status(400).json({ success: false, error: 'youTubeId or (title and artist) are required' });
+        }
+        const result = await getDb().deleteSong(youTubeId, title, artist, year);
+        return res.status(200).json({ success: true, deletedCount: result.deletedCount });
+    } catch (error) {
+        console.error('deleteSong error:', error);
+        return res.status(400).json({ success: false, error: error.message });
+    }
+}
+
 module.exports = {
     createPlaylist,
     deletePlaylist,
@@ -354,4 +350,5 @@ module.exports = {
     getAllSongs,
     incrementSongListen,
     incrementSongPlaylistCount,
+    deleteSong,
 }

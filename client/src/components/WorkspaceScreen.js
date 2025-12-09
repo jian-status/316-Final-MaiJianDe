@@ -2,6 +2,7 @@ import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SongCard from './SongCard.js'
 import MUIEditSongModal from './MUIEditSongModal'
+import MUIDeleteSongModal from './MUIDeleteSongModal'
 //import MUIRemoveSongModal from './MUIRemoveSongModal'
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
@@ -46,6 +47,7 @@ export default function WorkspaceScreen() {
             }
          </List>            
          { modalJSX }
+         <MUIDeleteSongModal />
          </Box>
     )
 }

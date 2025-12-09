@@ -28,7 +28,10 @@ const filterListReducer = (state, action) => {
             return state;
     }
 };
-const computeTotalListens = (playlist) => {}
+const computeTotalListens = (playlist) => {
+    if (!playlist || !playlist.songs) return 0;
+    return playlist.songs.reduce((total, song) => total + (song.listens || 0), 0);
+}
 const handlePlaylistClick = (playlist) => {
 }
 const sortPlaylistsReducer = (state, action) => {
@@ -61,6 +64,10 @@ function PlaylistCatalogScreen() {
     const { auth } = useContext(AuthContext);
     const { store } = useContext(GlobalStoreContext);
     const handlePlaylistCreation = () => {
+        if (!auth || !auth.loggedIn) {
+            console.error('Must be logged in to create a playlist');
+            return;
+        }
         store.createNewList();
     }
     const handleSearch = async () => {
@@ -115,15 +122,12 @@ function PlaylistCatalogScreen() {
             .catch(err => { console.error('Error loading playlists: ', err) });
     }, [auth.isAuthReady, auth.loggedIn, auth.user, store.currentList, store.idNamePairs]);
 
-    // If a playlist was requested for Play and the store's currentList becomes that playlist, open modal
     useEffect(() => {
         if (pendingPlayId && store.currentList && store.currentList._id === pendingPlayId) {
             setShowPlayModal(true);
             setPendingPlayId(null);
         }
     }, [pendingPlayId, store.currentList]);
-
-    // Removed useEffect that auto-filters playlists on input change
 
     let displayPlaylists = (playlists.data && playlists.data.length !== 0)
         ? playlists.data.map(playlist => (

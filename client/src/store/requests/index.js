@@ -69,6 +69,15 @@ export const incrementSongPlaylistCount = (youTubeId, title, artist, year) => {
     });
 }
 
+export const deleteSong = (youTubeId, title, artist, year) => {
+    return fetch(`http://localhost:4000/store/songs`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ youTubeId, title, artist, year })
+    });
+}
+
 const apis = {
     createPlaylist,
     deletePlaylistById,
@@ -79,7 +88,8 @@ const apis = {
     updatePlaylistById,
     getFilteredSongs
     ,incrementSongListen
-    ,incrementSongPlaylistCount
+    ,incrementSongPlaylistCount,
+    deleteSong
 }
 
 export default apis
